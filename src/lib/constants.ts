@@ -41,3 +41,9 @@ export const NAV_ITEMS = [
   { label: "Notas", href: "/notes", icon: "StickyNote" },
   { label: "Ajustes", href: "/settings", icon: "Settings" },
 ] as const;
+
+export const DELIVERABLE_STATUS_LABELS = {
+  pending: "Pendiente",
+  ready: "Listo para revisión",
+  approved: "Aprobado",
+} as const;
