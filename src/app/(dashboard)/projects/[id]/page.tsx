@@ -38,6 +38,14 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
     supabase.from("projects").select("*").eq("status", "active").order("name"),
   ]);
 
+  // The active-projects list drives the "linked project" Select in TaskForm.
+  // When this project itself is paused/completed it would otherwise be
+  // missing from that list, leaving the controlled Select with no matching
+  // option — always include it so creating a task from this page still works.
+  const panelProjects = activeProjects?.some((p) => p.id === project.id)
+    ? activeProjects
+    : [project, ...(activeProjects || [])];
+
   return (
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center gap-4">
@@ -63,7 +71,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
             deliverables={deliverables || []}
             tasks={tasks || []}
             users={allUsers || []}
-            projects={activeProjects || []}
+            projects={panelProjects}
           />
         </CardContent>
       </Card>
