@@ -22,6 +22,8 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 ## Database setup
 
+Requires Node.js >= 20.19 (the `seed` script relies on `--env-file-if-exists`, which is not available on older Node versions).
+
 1. Open the Supabase Dashboard for this project, go to **SQL Editor**, and run the contents of [`supabase/migrations/001_initial_schema.sql`](supabase/migrations/001_initial_schema.sql). This creates all tables, enums, RLS policies, the `notes.updated_at` trigger, and enables realtime on `projects`, `project_members`, `tasks`, and `transactions`.
 2. Copy `.env.local.example` to `.env.local` and fill in:
    - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` from your Supabase project's API settings.
