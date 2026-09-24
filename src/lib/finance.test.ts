@@ -9,6 +9,7 @@ import {
   exceedsHundred,
   financeTotals,
   partnerTotals,
+  transactionTotals,
 } from "./finance";
 import type { User } from "@/types";
 
@@ -164,5 +165,36 @@ describe("partnerTotals", () => {
       { user: alan, total: 0 },
       { user: jaziel, total: 0 },
     ]);
+  });
+});
+
+describe("transactionTotals", () => {
+  it("sums income, expense, and computes net", () => {
+    const transactions = [
+      { type: "income" as const, amount: 1000 },
+      { type: "income" as const, amount: 500 },
+      { type: "expense" as const, amount: 300 },
+    ];
+    expect(transactionTotals(transactions)).toEqual({ income: 1500, expense: 300, net: 1200 });
+  });
+
+  it("accepts string amounts", () => {
+    const transactions = [
+      { type: "income" as const, amount: "1000.50" },
+      { type: "expense" as const, amount: "250.25" },
+    ];
+    expect(transactionTotals(transactions)).toEqual({ income: 1000.5, expense: 250.25, net: 750.25 });
+  });
+
+  it("returns zeros for an empty list", () => {
+    expect(transactionTotals([])).toEqual({ income: 0, expense: 0, net: 0 });
+  });
+
+  it("can produce a negative net when expenses exceed income", () => {
+    const transactions = [
+      { type: "income" as const, amount: 100 },
+      { type: "expense" as const, amount: 400 },
+    ];
+    expect(transactionTotals(transactions)).toEqual({ income: 100, expense: 400, net: -300 });
   });
 });

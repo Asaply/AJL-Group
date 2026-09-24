@@ -64,6 +64,18 @@ export function financeTotals(projects: ProjectMoney[]): { income: number; cost:
   return { income, cost, margin: round2(income - cost) };
 }
 
+export function transactionTotals(
+  transactions: { type: "income" | "expense"; amount: MoneyLike }[]
+): { income: number; expense: number; net: number } {
+  const income = round2(
+    transactions.filter((t) => t.type === "income").reduce((sum, t) => sum + toNumber(t.amount), 0)
+  );
+  const expense = round2(
+    transactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + toNumber(t.amount), 0)
+  );
+  return { income, expense, net: round2(income - expense) };
+}
+
 export function partnerTotals(
   users: User[],
   members: MemberLike[],

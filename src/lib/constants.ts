@@ -24,6 +24,11 @@ export const TASK_STATUS_LABELS = {
   completed: "Completado",
 } as const;
 
+export const TRANSACTION_TYPE_LABELS = {
+  income: "Ingreso",
+  expense: "Gasto",
+} as const;
+
 export const NAV_ITEMS = [
   { label: "Dashboard", href: "/", icon: "LayoutDashboard" },
   { label: "Proyectos", href: "/projects", icon: "FolderKanban" },
