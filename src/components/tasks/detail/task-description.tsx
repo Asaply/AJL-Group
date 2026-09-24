@@ -10,12 +10,16 @@ import type { TaskDetail } from "@/types";
 
 type SaveState = "idle" | "dirty" | "saving" | "saved" | "error";
 
+// `reload` is intentionally unused here: a successful save updates the `tasks`
+// row, and the sheet's own realtime subscription already refetches on that
+// change, so this section doesn't need to trigger it itself.
 export function TaskDescription({ detail }: { detail: TaskDetail; reload: () => void }) {
   const { task } = detail;
   const [value, setValue] = useState(task.description ?? "");
   const [mode, setMode] = useState<"edit" | "preview">(task.description ? "preview" : "edit");
   const [state, setState] = useState<SaveState>("idle");
   const dirtyRef = useRef(false);
+  const valueRef = useRef(value);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Take server updates (realtime) only while the user has nothing pending.
@@ -23,9 +27,19 @@ export function TaskDescription({ detail }: { detail: TaskDetail; reload: () => 
     if (!dirtyRef.current) setValue(task.description ?? "");
   }, [task.description]);
 
-  useEffect(() => () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-  }, []);
+  // Flush a pending debounced edit instead of dropping it: the Sheet can
+  // close, or the user can switch tasks, before the 1s timer fires — both
+  // unmount this component. `taskId` is captured here so the flush always
+  // targets the task this edit was made on, not whatever is open later.
+  useEffect(() => {
+    const taskId = task.id;
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (dirtyRef.current) {
+        void updateTaskField(taskId, "description", valueRef.current);
+      }
+    };
+  }, [task.id]);
 
   async function persist(next: string) {
     setState("saving");
@@ -41,6 +55,7 @@ export function TaskDescription({ detail }: { detail: TaskDetail; reload: () => 
 
   function handleChange(next: string) {
     setValue(next);
+    valueRef.current = next;
     dirtyRef.current = true;
     setState("dirty");
     if (timerRef.current) clearTimeout(timerRef.current);
