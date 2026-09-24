@@ -15,7 +15,7 @@ const base = {
   end_date: "2026-10-01",
   budget: "1000.50",
   production_cost: "200",
-  progress: "40",
+  color: "#6366f1",
 };
 
 describe("isValidDateKey", () => {
@@ -45,12 +45,27 @@ describe("parseProjectForm (create)", () => {
         end_date: "2026-10-01",
         budget: 1000.5,
         production_cost: 200,
+        color: "#6366F1",
       },
     });
   });
 
-  it("does not include progress on create", () => {
+  it("normalizes the color to uppercase hex", () => {
     const result = parseProjectForm(fd(base), "create");
+    expect(result.ok && result.values.color).toBe("#6366F1");
+  });
+
+  it("rejects a missing or invalid color", () => {
+    const error = { ok: false, error: "Color inválido" };
+    const noColor = { ...base } as Record<string, string>;
+    delete noColor.color;
+    expect(parseProjectForm(fd(noColor), "create")).toEqual(error);
+    expect(parseProjectForm(fd({ ...base, color: "red" }), "update")).toEqual(error);
+    expect(parseProjectForm(fd({ ...base, color: "#FFF" }), "create")).toEqual(error);
+  });
+
+  it("never includes progress", () => {
+    const result = parseProjectForm(fd({ ...base, progress: "40" } as Record<string, string>), "update");
     expect(result.ok && "progress" in result.values).toBe(false);
   });
 
@@ -102,27 +117,9 @@ describe("parseProjectForm (create)", () => {
 });
 
 describe("parseProjectForm (update)", () => {
-  it("includes progress", () => {
-    const result = parseProjectForm(fd(base), "update");
-    expect(result.ok && result.values.progress).toBe(40);
-  });
-
   it("rejects an invalid status instead of defaulting", () => {
     expect(parseProjectForm(fd({ ...base, status: "bogus" }), "update")).toEqual({ ok: false, error: "Estado inválido" });
     expect(parseProjectForm(fd({ ...base, status: "" }), "update")).toEqual({ ok: false, error: "Estado inválido" });
-  });
-
-  it("accepts progress 0 and 100", () => {
-    expect(parseProjectForm(fd({ ...base, progress: "0" }), "update").ok).toBe(true);
-    expect(parseProjectForm(fd({ ...base, progress: "100" }), "update").ok).toBe(true);
-  });
-
-  it("rejects out-of-range, fractional or blank progress", () => {
-    const error = { ok: false, error: "El progreso debe ser un entero entre 0 y 100" };
-    expect(parseProjectForm(fd({ ...base, progress: "101" }), "update")).toEqual(error);
-    expect(parseProjectForm(fd({ ...base, progress: "-1" }), "update")).toEqual(error);
-    expect(parseProjectForm(fd({ ...base, progress: "50.5" }), "update")).toEqual(error);
-    expect(parseProjectForm(fd({ ...base, progress: "" }), "update")).toEqual(error);
   });
 });
 

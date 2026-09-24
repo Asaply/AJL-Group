@@ -1,4 +1,5 @@
 import type { ProjectStatus } from "@/types";
+import { parseHexColor } from "@/lib/colors";
 
 /**
  * Pure parsing/validation for the project server actions. Kept free of
@@ -37,7 +38,7 @@ export interface ProjectFormValues {
   end_date: string | null;
   budget: number;
   production_cost: number;
-  progress?: number;
+  color: string;
 }
 
 export type ParseResult<T> = { ok: true; values: T } | { ok: false; error: string };
@@ -83,16 +84,10 @@ export function parseProjectForm(
     return { ok: false, error: "El costo de producción debe ser un número mayor o igual a 0" };
   }
 
-  const values: ProjectFormValues = { name, client, status, start_date, end_date, budget, production_cost };
+  const color = parseHexColor(formData.get("color"));
+  if (!color) return { ok: false, error: "Color inválido" };
 
-  if (mode === "update") {
-    const rawProgress = str(formData, "progress");
-    const progress = rawProgress ? Number(rawProgress) : NaN;
-    if (!Number.isInteger(progress) || progress < 0 || progress > 100) {
-      return { ok: false, error: "El progreso debe ser un entero entre 0 y 100" };
-    }
-    values.progress = progress;
-  }
+  const values: ProjectFormValues = { name, client, status, start_date, end_date, budget, production_cost, color };
 
   return { ok: true, values };
 }

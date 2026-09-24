@@ -42,8 +42,9 @@ script refuses to run until all of them are set.
    It creates the enums, tables, indexes, the `is_partner()` helper, the RLS
    policies, the `notes.updated_at` trigger, and adds the tables to the
    `supabase_realtime` publication (live updates need no extra setup).
+3. Then run `supabase/migrations/002_project_color_deliverables.sql` the same way (migrations run in order).
 
-## 4. REQUIRED: disable public sign-up
+## 5. REQUIRED: disable public sign-up
 
 Supabase Dashboard > **Authentication** > **Sign In / Providers** (named
 "Providers" in older dashboards) > turn **off** "Allow new users to sign up".
@@ -53,7 +54,7 @@ anyone holding the (public) anon key unless this is disabled. RLS also only
 grants access to users that have a row in `public.users` (via
 `is_partner()`), so a stray sign-up sees nothing — but disable sign-up anyway.
 
-## 5. Seed the partner accounts
+## 6. Seed the partner accounts
 
 ```bash
 npm run seed

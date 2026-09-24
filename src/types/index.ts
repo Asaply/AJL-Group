@@ -16,12 +16,13 @@ export interface Project {
   name: string;
   client: string;
   status: ProjectStatus;
-  progress: number;
+  color: string;
   start_date: string;
   end_date: string | null;
   budget: number;
   production_cost: number;
   created_at: string;
+  deliverables?: Deliverable[];
 }
 
 export interface ProjectLink {
@@ -40,6 +41,18 @@ export interface ProjectMember {
   user?: User;
 }
 
+export interface Deliverable {
+  id: string;
+  project_id: string;
+  title: string;
+  weight: number;
+  approved_at: string | null;
+  approved_by: string | null;
+  position: number;
+  created_at: string;
+  approver?: User | null;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -48,10 +61,12 @@ export interface Task {
   status: TaskStatus;
   due_date: string | null;
   project_id: string | null;
+  deliverable_id: string | null;
   assigned_to: string;
   created_by: string;
   created_at: string;
   project?: Project;
+  deliverable?: Deliverable | null;
   assignee?: User;
 }
 

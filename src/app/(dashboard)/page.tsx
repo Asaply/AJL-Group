@@ -9,7 +9,7 @@ export default async function DashboardPage() {
 
   const [{ data: users }, { data: projects }, { data: tasks }, { data: members }] = await Promise.all([
     supabase.from("users").select("*"),
-    supabase.from("projects").select("*"),
+    supabase.from("projects").select("*, deliverables(id, weight, approved_at)"),
     supabase.from("tasks").select("*, assignee:users!assigned_to(*), project:projects(*)"),
     supabase.from("project_members").select("*"),
   ]);

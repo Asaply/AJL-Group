@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ProjectCard } from "@/components/projects/project-card";
 import { ProjectForm } from "@/components/projects/project-form";
 import { ProjectFilters } from "@/components/projects/project-filters";
+import { nextPaletteColor } from "@/lib/colors";
 
 const NIL_UUID = "00000000-0000-0000-0000-000000000000";
 
@@ -13,7 +14,10 @@ export default async function ProjectsPage({
 }) {
   const supabase = await createClient();
 
-  let query = supabase.from("projects").select("*").order("created_at", { ascending: false });
+  let query = supabase
+    .from("projects")
+    .select("*, deliverables(id, weight, approved_at)")
+    .order("created_at", { ascending: false });
 
   if (searchParams.status && searchParams.status !== "all") {
     query = query.eq("status", searchParams.status);
@@ -28,14 +32,17 @@ export default async function ProjectsPage({
     query = query.in("id", projectIds.length > 0 ? projectIds : [NIL_UUID]);
   }
 
-  const { data: projects } = await query;
-  const { data: users } = await supabase.from("users").select("*").order("name");
+  const [{ data: projects }, { data: users }, { data: colorRows }] = await Promise.all([
+    query,
+    supabase.from("users").select("*").order("name"),
+    supabase.from("projects").select("color"),
+  ]);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Proyectos</h1>
-        <ProjectForm />
+        <ProjectForm defaultColor={nextPaletteColor((colorRows || []).map((r) => r.color))} />
       </div>
       <Suspense fallback={null}>
         <ProjectFilters users={users || []} />

@@ -8,9 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { createProject } from "@/app/(dashboard)/projects/actions";
+import { ColorPicker } from "@/components/projects/color-picker";
 import { Plus } from "lucide-react";
 
-export function ProjectForm() {
+export function ProjectForm({ defaultColor }: { defaultColor: string }) {
   const [open, setOpen] = useState(false);
 
   async function handleSubmit(formData: FormData) {
@@ -39,6 +40,10 @@ export function ProjectForm() {
           <div className="space-y-2">
             <Label htmlFor="client">Cliente</Label>
             <Input id="client" name="client" required />
+          </div>
+          <div className="space-y-2">
+            <Label>Color</Label>
+            <ColorPicker name="color" defaultValue={defaultColor} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="status">Estado</Label>

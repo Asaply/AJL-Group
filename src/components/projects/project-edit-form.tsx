@@ -8,11 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { updateProject, deleteProject } from "@/app/(dashboard)/projects/actions";
+import { ColorPicker } from "@/components/projects/color-picker";
 import type { Project } from "@/types";
 
 export function ProjectEditForm({ project }: { project: Project }) {
   const router = useRouter();
-  const [progress, setProgress] = useState(project.progress);
   const [deleting, setDeleting] = useState(false);
 
   async function handleSubmit(formData: FormData) {
@@ -60,21 +60,8 @@ export function ProjectEditForm({ project }: { project: Project }) {
         </Select>
       </div>
       <div className="space-y-2">
-        <div className="flex justify-between text-sm">
-          <Label htmlFor="progress">Progreso</Label>
-          <span>{progress}%</span>
-        </div>
-        <input
-          id="progress"
-          name="progress"
-          type="range"
-          min={0}
-          max={100}
-          step={5}
-          value={progress}
-          onChange={(e) => setProgress(Number(e.target.value))}
-          className="w-full"
-        />
+        <Label>Color</Label>
+        <ColorPicker name="color" defaultValue={project.color} />
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">

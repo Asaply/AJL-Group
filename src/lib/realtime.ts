@@ -1,4 +1,4 @@
-export const REALTIME_TABLES = ["projects", "project_links", "project_members", "tasks", "transactions"] as const;
+export const REALTIME_TABLES = ["projects", "project_links", "project_members", "tasks", "transactions", "deliverables"] as const;
 
 export function createDebouncedRefresh(
   refresh: () => void,
