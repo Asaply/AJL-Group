@@ -33,9 +33,9 @@ export function TaskFilters({ users, projects }: { users: User[]; projects: Proj
         </SelectContent>
       </Select>
       <Select value={searchParams.get("status") || "all"} onValueChange={(v) => setParam("status", v)}>
-        <SelectTrigger className="w-44"><SelectValue placeholder="Status" /></SelectTrigger>
+        <SelectTrigger className="w-44"><SelectValue placeholder="Estado" /></SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Todos los status</SelectItem>
+          <SelectItem value="all">Todos los estados</SelectItem>
           {Object.entries(TASK_STATUS_LABELS).map(([value, label]) => (
             <SelectItem key={value} value={value}>{label}</SelectItem>
           ))}

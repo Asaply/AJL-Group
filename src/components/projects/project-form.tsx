@@ -41,7 +41,7 @@ export function ProjectForm() {
             <Input id="client" name="client" required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
+            <Label htmlFor="status">Estado</Label>
             <Select name="status" defaultValue="active">
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>

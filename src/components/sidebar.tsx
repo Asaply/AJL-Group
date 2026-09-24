@@ -11,6 +11,8 @@ import { NAV_ITEMS } from "@/lib/constants";
 import { ThemeToggle } from "./theme-toggle";
 import { logout } from "@/app/(auth)/login/actions";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { parseHttpUrl } from "@/lib/url";
 import type { User } from "@/types";
 
 const icons = {
@@ -20,12 +22,19 @@ const icons = {
 
 export function Sidebar({ user }: { user: User }) {
   const pathname = usePathname();
+  const avatarUrl = parseHttpUrl(user.avatar_url);
 
   return (
     <aside className="flex flex-col h-screen w-64 border-r bg-card">
       <div className="p-6">
         <h1 className="text-xl font-bold">AJL Group</h1>
-        <p className="text-sm text-muted-foreground">{user.name}</p>
+        <div className="mt-3 flex items-center gap-2">
+          <Avatar className="h-8 w-8">
+            {avatarUrl && <AvatarImage src={avatarUrl} alt={user.name} />}
+            <AvatarFallback className="text-xs">{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <p className="text-sm text-muted-foreground">{user.name}</p>
+        </div>
       </div>
 
       <nav className="flex-1 px-3 space-y-1">

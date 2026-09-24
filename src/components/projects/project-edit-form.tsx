@@ -49,7 +49,7 @@ export function ProjectEditForm({ project }: { project: Project }) {
         </div>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="status">Status</Label>
+        <Label htmlFor="status">Estado</Label>
         <Select name="status" defaultValue={project.status}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>

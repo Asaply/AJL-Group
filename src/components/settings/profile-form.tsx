@@ -54,7 +54,7 @@ export function ProfileForm({ profile }: { profile: User }) {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Correo</Label>
             <Input
               id="email"
               name="email"
@@ -63,7 +63,7 @@ export function ProfileForm({ profile }: { profile: User }) {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="avatar_url">Avatar URL</Label>
+            <Label htmlFor="avatar_url">URL del avatar</Label>
             <Input
               id="avatar_url"
               name="avatar_url"

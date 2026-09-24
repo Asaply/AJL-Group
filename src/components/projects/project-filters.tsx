@@ -24,9 +24,9 @@ export function ProjectFilters({ users }: { users: User[] }) {
   return (
     <div className="flex flex-wrap gap-4">
       <Select value={searchParams.get("status") || "all"} onValueChange={(v) => setParam("status", v)}>
-        <SelectTrigger className="w-48"><SelectValue placeholder="Status" /></SelectTrigger>
+        <SelectTrigger className="w-48"><SelectValue placeholder="Estado" /></SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Todos los status</SelectItem>
+          <SelectItem value="all">Todos los estados</SelectItem>
           {Object.entries(STATUS_LABELS).map(([value, label]) => (
             <SelectItem key={value} value={value}>{label}</SelectItem>
           ))}
