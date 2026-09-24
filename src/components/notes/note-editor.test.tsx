@@ -12,6 +12,10 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn() }),
 }));
 
+vi.mock("sonner", () => ({
+  toast: { error: vi.fn(), success: vi.fn() },
+}));
+
 const baseNote: Note = {
   id: "note-1",
   title: "Mi nota",
@@ -65,5 +69,42 @@ describe("NoteEditor", () => {
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
     expect(screen.getByText("Mi nota")).toBeInTheDocument();
     expect(screen.getByText("Por Jaziel")).toBeInTheDocument();
+  });
+
+  it("omits the title from the save when it is blank, so the content still persists", async () => {
+    render(<NoteEditor note={baseNote} currentUserId="user-1" />);
+
+    const titleInput = screen.getByPlaceholderText("Título");
+    fireEvent.change(titleInput, { target: { value: "   " } });
+
+    const textarea = screen.getByPlaceholderText("Escribe aquí… (soporta markdown)");
+    fireEvent.change(textarea, { target: { value: "Contenido sin título" } });
+
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(updateNote).toHaveBeenCalledTimes(1);
+    expect(updateNote).toHaveBeenCalledWith("note-1", "Contenido sin título", undefined);
+  });
+
+  it("retries the save for the original note after a transient save error", async () => {
+    vi.mocked(updateNote).mockResolvedValueOnce({ error: "Fallo de red" });
+
+    const { rerender } = render(<NoteEditor note={baseNote} currentUserId="user-1" />);
+
+    const textarea = screen.getByPlaceholderText("Escribe aquí… (soporta markdown)");
+    fireEvent.change(textarea, { target: { value: "Contenido con error" } });
+
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(updateNote).toHaveBeenCalledTimes(1);
+    expect(updateNote).toHaveBeenNthCalledWith(1, "note-1", "Contenido con error", "Mi nota");
+
+    // Switching to a different note must flush the still-dirty (failed) save
+    // for the ORIGINAL note, not silently drop it.
+    const anotherNote: Note = { ...baseNote, id: "note-9", title: "Otra nota", content: "Otro contenido" };
+    rerender(<NoteEditor note={anotherNote} currentUserId="user-1" />);
+
+    expect(updateNote).toHaveBeenCalledTimes(2);
+    expect(updateNote).toHaveBeenNthCalledWith(2, "note-1", "Contenido con error", "Mi nota");
   });
 });

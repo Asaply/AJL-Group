@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { updateNote } from "@/app/(dashboard)/notes/actions";
-import { canEditNote } from "@/lib/notes";
+import { canEditNote, normalizeNoteTitle } from "@/lib/notes";
 import type { Note } from "@/types";
 
 type SaveStatus = "idle" | "dirty" | "saving" | "saved" | "error";
@@ -65,11 +65,18 @@ export function NoteEditor({ note, currentUserId }: { note: Note; currentUserId:
     const id = noteIdRef.current;
     const savedTitle = titleRef.current;
     const savedContent = contentRef.current;
+    // A blank title must never block the content save: omit it from the
+    // update entirely (server-side validation is unchanged) rather than
+    // sending an empty string that `updateNote` would reject wholesale.
+    const normalizedTitle = normalizeNoteTitle(savedTitle);
 
     if (mountedRef.current) setStatus("saving");
-    const result = await updateNote(id, savedContent, savedTitle);
+    const result = await updateNote(id, savedContent, normalizedTitle ?? undefined);
     if (result?.error) {
       toast.error(result.error);
+      // Restore the dirty flag so the next edit, debounce, or note
+      // switch retries this save instead of silently dropping it.
+      dirtyRef.current = true;
       if (mountedRef.current) setStatus("error");
       return;
     }
@@ -117,6 +124,8 @@ export function NoteEditor({ note, currentUserId }: { note: Note; currentUserId:
     scheduleSave();
   }
 
+  const titleBlank = normalizeNoteTitle(title) === null;
+
   if (!editable) {
     return (
       <div className="space-y-4 h-full overflow-y-auto">
@@ -137,6 +146,9 @@ export function NoteEditor({ note, currentUserId }: { note: Note; currentUserId:
         className="text-xl font-bold border-none px-0 focus-visible:ring-0"
         placeholder="Título"
       />
+      {titleBlank && (
+        <p className="text-xs text-destructive -mt-3">El título no puede estar vacío</p>
+      )}
       <div className="flex items-center gap-2">
         <Button
           type="button"
