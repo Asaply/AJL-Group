@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { actionError, SAVE_ERROR, DELETE_ERROR } from "@/lib/action-error";
+import { actionError, SAVE_ERROR, DELETE_ERROR, LOAD_ERROR } from "@/lib/action-error";
 import type { TaskPriority, TaskStatus } from "@/types";
 
 const TASK_PRIORITIES: TaskPriority[] = ["urgent", "high", "medium", "low"];
@@ -32,12 +32,28 @@ export async function createTask(formData: FormData) {
     ? (rawPriority as TaskPriority)
     : "medium";
 
+  const project_id = normalizeProjectId(formData.get("project_id"));
+  const deliverable_id = normalizeProjectId(formData.get("deliverable_id"));
+
+  if (deliverable_id) {
+    if (!project_id) return { error: "El entregable no pertenece a este proyecto" };
+    const { data: deliverable, error: dError } = await supabase
+      .from("deliverables")
+      .select("id")
+      .eq("id", deliverable_id)
+      .eq("project_id", project_id)
+      .maybeSingle();
+    if (dError) return actionError("createTask:deliverable", dError, LOAD_ERROR);
+    if (!deliverable) return { error: "El entregable no pertenece a este proyecto" };
+  }
+
   const { error } = await supabase.from("tasks").insert({
     title,
     description: (formData.get("description") as string) || null,
     priority,
     due_date: (formData.get("due_date") as string) || null,
-    project_id: normalizeProjectId(formData.get("project_id")),
+    project_id,
+    deliverable_id,
     assigned_to,
     created_by: user.id,
   });

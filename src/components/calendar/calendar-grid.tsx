@@ -8,7 +8,7 @@ import { TaskCard } from "@/components/tasks/task-card";
 import { TaskForm } from "@/components/tasks/task-form";
 import { PRIORITY_COLORS } from "@/lib/constants";
 import { buildMonthCells, groupTasksByDate, parseDateKey, toDateKey } from "@/lib/calendar";
-import type { Task, TaskPriority, User, Project } from "@/types";
+import type { Task, TaskPriority, User, Project, Deliverable } from "@/types";
 
 const MONTHS = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -34,11 +34,13 @@ export function CalendarGrid({
   tasks,
   users,
   projects,
+  deliverables,
   today,
 }: {
   tasks: Task[];
   users: User[];
   projects: Project[];
+  deliverables: Deliverable[];
   /** "YYYY-MM-DD" in the app time zone, computed on the server via todayKey(). */
   today: string;
 }) {
@@ -141,7 +143,7 @@ export function CalendarGrid({
               selectedTasks.map((t) => <TaskCard key={t.id} task={t} />)
             )}
             {selectedDate && (
-              <TaskForm users={users} projects={projects} defaultDueDate={selectedDate} />
+              <TaskForm users={users} projects={projects} deliverables={deliverables} defaultDueDate={selectedDate} />
             )}
           </div>
         </DialogContent>

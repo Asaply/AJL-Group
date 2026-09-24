@@ -31,18 +31,20 @@ export default async function TasksPage({
     query = query.eq("project_id", searchParams.project);
   }
 
-  const [{ data: tasks }, { data: users }, { data: allProjects }, { data: activeProjects }] = await Promise.all([
-    query,
-    supabase.from("users").select("*").order("name"),
-    supabase.from("projects").select("*").order("name"),
-    supabase.from("projects").select("*").eq("status", "active").order("name"),
-  ]);
+  const [{ data: tasks }, { data: users }, { data: allProjects }, { data: activeProjects }, { data: deliverables }] =
+    await Promise.all([
+      query,
+      supabase.from("users").select("*").order("name"),
+      supabase.from("projects").select("*").order("name"),
+      supabase.from("projects").select("*").eq("status", "active").order("name"),
+      supabase.from("deliverables").select("*").order("position"),
+    ]);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Pendientes</h1>
-        <TaskForm users={users || []} projects={activeProjects || []} />
+        <TaskForm users={users || []} projects={activeProjects || []} deliverables={deliverables || []} />
       </div>
       <Suspense fallback={null}>
         <TaskFilters users={users || []} projects={allProjects || []} />

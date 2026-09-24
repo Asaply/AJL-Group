@@ -6,6 +6,7 @@ import { ProjectLinks } from "@/components/projects/project-links";
 import { ProjectMembers } from "@/components/projects/project-members";
 import { ProjectFinance } from "@/components/projects/project-finance";
 import { ProjectEditForm } from "@/components/projects/project-edit-form";
+import { DeliverablesPanel } from "@/components/projects/deliverables-panel";
 import { STATUS_LABELS, TASK_STATUS_LABELS } from "@/lib/constants";
 
 export default async function ProjectDetailPage({ params }: { params: { id: string } }) {
@@ -21,11 +22,20 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
     { data: members },
     { data: allUsers },
     { data: tasks },
+    { data: deliverables },
+    { data: activeProjects },
   ] = await Promise.all([
     supabase.from("project_links").select("*").eq("project_id", params.id),
     supabase.from("project_members").select("*, user:users(*)").eq("project_id", params.id),
     supabase.from("users").select("*"),
     supabase.from("tasks").select("*").eq("project_id", params.id).order("created_at", { ascending: false }),
+    supabase
+      .from("deliverables")
+      .select("*, approver:users!approved_by(*)")
+      .eq("project_id", params.id)
+      .order("position")
+      .order("created_at"),
+    supabase.from("projects").select("*").eq("status", "active").order("name"),
   ]);
 
   return (
@@ -42,6 +52,19 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
           {/* Keyed by the row data so the uncontrolled form re-mounts with fresh
               defaultValues whenever the server data changes (realtime refresh). */}
           <ProjectEditForm key={JSON.stringify(project)} project={project} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="pt-6">
+          <DeliverablesPanel
+            projectId={params.id}
+            color={project.color}
+            deliverables={deliverables || []}
+            tasks={tasks || []}
+            users={allUsers || []}
+            projects={activeProjects || []}
+          />
         </CardContent>
       </Card>
 

@@ -11,18 +11,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { createTask } from "@/app/(dashboard)/tasks/actions";
 import { PRIORITY_LABELS } from "@/lib/constants";
-import type { User, Project } from "@/types";
+import type { User, Project, Deliverable } from "@/types";
 
 export function TaskForm({
   users,
   projects,
   defaultDueDate,
+  deliverables = [],
+  defaultProjectId,
+  defaultDeliverableId,
 }: {
   users: User[];
   projects: Project[];
   defaultDueDate?: string;
+  deliverables?: Deliverable[];
+  defaultProjectId?: string;
+  defaultDeliverableId?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [projectId, setProjectId] = useState(defaultProjectId ?? "none");
+  const projectDeliverables = deliverables.filter((d) => d.project_id === projectId);
 
   async function handleSubmit(formData: FormData) {
     const result = await createTask(formData);
@@ -30,6 +38,7 @@ export function TaskForm({
       toast.error(result.error);
       return;
     }
+    setProjectId(defaultProjectId ?? "none");
     setOpen(false);
   }
 
@@ -80,7 +89,7 @@ export function TaskForm({
             </div>
             <div className="space-y-2">
               <Label htmlFor="project_id">Proyecto (opcional)</Label>
-              <Select name="project_id" defaultValue="none">
+              <Select name="project_id" value={projectId} onValueChange={setProjectId}>
                 <SelectTrigger id="project_id"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">General (sin proyecto)</SelectItem>
@@ -91,6 +100,20 @@ export function TaskForm({
               </Select>
             </div>
           </div>
+          {projectId !== "none" && projectDeliverables.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="deliverable_id">Entregable (opcional)</Label>
+              <Select key={projectId} name="deliverable_id" defaultValue={defaultDeliverableId ?? "none"}>
+                <SelectTrigger id="deliverable_id"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin entregable</SelectItem>
+                  {projectDeliverables.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>{d.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <Button type="submit" className="w-full">Crear</Button>
         </form>
       </DialogContent>
