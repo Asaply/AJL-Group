@@ -5,6 +5,7 @@ import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ProjectDot } from "@/components/projects/project-dot";
 import { deleteTransaction } from "@/app/(dashboard)/finance/actions";
 import { transactionTotals } from "@/lib/finance";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -37,7 +38,11 @@ export function TransactionTable({ transactions }: { transactions: Transaction[]
           {transactions.map((t) => (
             <TableRow key={t.id}>
               <TableCell>{formatDate(t.date)}</TableCell>
-              <TableCell>{t.project?.name}</TableCell>
+              <TableCell>
+                {t.project && (
+                  <span className="inline-flex items-center gap-2"><ProjectDot color={t.project.color} />{t.project.name}</span>
+                )}
+              </TableCell>
               <TableCell>
                 <Badge variant={t.type === "income" ? "default" : "destructive"}>
                   {TRANSACTION_TYPE_LABELS[t.type]}

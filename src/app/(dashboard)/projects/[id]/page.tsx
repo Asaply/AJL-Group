@@ -7,6 +7,7 @@ import { ProjectMembers } from "@/components/projects/project-members";
 import { ProjectFinance } from "@/components/projects/project-finance";
 import { ProjectEditForm } from "@/components/projects/project-edit-form";
 import { DeliverablesPanel } from "@/components/projects/deliverables-panel";
+import { ProjectDot } from "@/components/projects/project-dot";
 import { STATUS_LABELS, TASK_STATUS_LABELS } from "@/lib/constants";
 
 export default async function ProjectDetailPage({ params }: { params: { id: string } }) {
@@ -49,6 +50,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
   return (
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center gap-4">
+        <ProjectDot color={project.color} className="h-4 w-4" />
         <h1 className="text-3xl font-bold">{project.name}</h1>
         <Badge>{STATUS_LABELS[project.status as keyof typeof STATUS_LABELS]}</Badge>
       </div>

@@ -116,7 +116,10 @@ export function CalendarGrid({
                   <div
                     key={t.id}
                     className={`text-[10px] truncate rounded px-1 py-0.5 ${CHIP_TEXT_CLASS[t.priority]} ${t.status === "completed" ? "opacity-50 line-through" : ""}`}
-                    style={{ backgroundColor: PRIORITY_COLORS[t.priority] }}
+                    style={{
+                      backgroundColor: PRIORITY_COLORS[t.priority],
+                      ...(t.project ? { borderLeft: `3px solid ${t.project.color}` } : {}),
+                    }}
                     title={t.title}
                   >
                     {t.title}

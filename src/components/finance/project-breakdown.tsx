@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ProjectDot } from "@/components/projects/project-dot";
 import { formatCurrency } from "@/lib/utils";
 import { projectMargin, marginPercent, memberShare } from "@/lib/finance";
 import type { Project, ProjectMember, User } from "@/types";
@@ -22,7 +23,8 @@ export function ProjectBreakdown({ projects, members }: ProjectBreakdownData) {
           return (
             <div key={project.id} className="border rounded-lg p-4 space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <Link href={`/projects/${project.id}`} className="font-semibold text-primary hover:underline">
+                <Link href={`/projects/${project.id}`} className="inline-flex items-center gap-2 font-semibold text-primary hover:underline">
+                  <ProjectDot color={project.color} />
                   {project.name}
                 </Link>
                 <div className="flex flex-wrap gap-4 text-sm">

@@ -6,6 +6,7 @@ import { Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ProjectDot } from "@/components/projects/project-dot";
 import { PRIORITY_COLORS, PRIORITY_LABELS, TASK_STATUS_LABELS } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import { updateTaskStatus, deleteTask } from "@/app/(dashboard)/tasks/actions";
@@ -47,7 +48,9 @@ export function TaskCard({ task }: { task: Task }) {
           <p className="font-medium">{task.title}</p>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             {task.assignee && <span>{task.assignee.name}</span>}
-            {task.project && <span>· {task.project.name}</span>}
+            {task.project && (
+              <span className="inline-flex items-center gap-1">· <ProjectDot color={task.project.color} />{task.project.name}</span>
+            )}
             {task.due_date && <span>· {formatDate(task.due_date)}</span>}
           </div>
         </div>
