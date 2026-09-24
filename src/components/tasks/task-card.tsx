@@ -1,0 +1,72 @@
+"use client";
+
+import { useState } from "react";
+import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PRIORITY_COLORS, PRIORITY_LABELS, TASK_STATUS_LABELS } from "@/lib/constants";
+import { formatDate } from "@/lib/utils";
+import { updateTaskStatus, deleteTask } from "@/app/(dashboard)/tasks/actions";
+import type { Task, TaskStatus } from "@/types";
+
+export function TaskCard({ task }: { task: Task }) {
+  const [status, setStatus] = useState<TaskStatus>(task.status);
+
+  async function handleStatusChange(value: string) {
+    const previous = status;
+    setStatus(value as TaskStatus);
+    const result = await updateTaskStatus(task.id, value);
+    if (result?.error) {
+      toast.error(result.error);
+      setStatus(previous);
+    }
+  }
+
+  async function handleDelete() {
+    if (!confirm("¿Eliminar este pendiente?")) return;
+    const result = await deleteTask(task.id);
+    if (result?.error) toast.error(result.error);
+  }
+
+  return (
+    <div className="flex items-center justify-between border rounded-lg p-4">
+      <div className="flex items-center gap-3">
+        <div
+          className="w-2 h-2 rounded-full"
+          style={{ backgroundColor: PRIORITY_COLORS[task.priority] }}
+        />
+        <div>
+          <p className="font-medium">{task.title}</p>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            {task.assignee && <span>{task.assignee.name}</span>}
+            {task.project && <span>· {task.project.name}</span>}
+            {task.due_date && <span>· {formatDate(task.due_date)}</span>}
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <Badge
+          variant="outline"
+          style={{ borderColor: PRIORITY_COLORS[task.priority], color: PRIORITY_COLORS[task.priority] }}
+        >
+          {PRIORITY_LABELS[task.priority]}
+        </Badge>
+        <Select value={status} onValueChange={handleStatusChange}>
+          <SelectTrigger className="w-36 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(TASK_STATUS_LABELS).map(([value, label]) => (
+              <SelectItem key={value} value={value}>{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button variant="ghost" size="icon" type="button" onClick={handleDelete}>
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
