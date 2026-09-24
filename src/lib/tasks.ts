@@ -1,3 +1,4 @@
+import { APP_TIME_ZONE } from "@/lib/constants";
 import type { TaskPriority, TaskStatus } from "@/types";
 
 /**
@@ -36,22 +37,32 @@ export function selectUrgentTasks<
 }
 
 /**
- * Date-only comparison (LOCAL time) of a `due_date` against `today`.
- * A due date equal to today is not overdue. `due_date` strings are parsed
- * as "YYYY-MM-DD" (as returned by Postgres `date` columns) by splitting
- * the parts rather than via `new Date(str)`, which parses as UTC midnight
- * and can shift a day earlier in timezones behind UTC (e.g. Mexico).
+ * Returns the "YYYY-MM-DD" calendar date key for the given instant, as
+ * observed in `timeZone` (default: the app's operating time zone).
+ *
+ * This must NOT use `Date#getFullYear`/`getMonth`/`getDate`, which read the
+ * *host* system's local time zone — on Vercel that's UTC, not Mexico
+ * (UTC-6, no DST). Between ~18:00 and 23:59 Mexico time, UTC has already
+ * rolled over to the next calendar day, which would misclassify "today"'s
+ * tasks as overdue. `Intl.DateTimeFormat` with an explicit `timeZone`
+ * sidesteps the host's zone entirely.
  */
-export function isOverdue(dueDate: string | null, today: Date): boolean {
+export function todayKey(now: Date = new Date(), timeZone: string = APP_TIME_ZONE): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
+/**
+ * Date-key comparison of a `due_date` ("YYYY-MM-DD") against `today`
+ * (also a "YYYY-MM-DD" key, typically from `todayKey()`). A due date equal
+ * to today is not overdue. Both are lexicographically comparable strings
+ * in the same format, so a plain string compare suffices.
+ */
+export function isOverdue(dueDate: string | null, today: string): boolean {
   if (!dueDate) return false;
-
-  const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dueDate);
-  const due = dateOnlyMatch
-    ? new Date(Number(dateOnlyMatch[1]), Number(dateOnlyMatch[2]) - 1, Number(dateOnlyMatch[3]))
-    : new Date(dueDate);
-
-  const dueLocal = new Date(due.getFullYear(), due.getMonth(), due.getDate()).getTime();
-  const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-
-  return dueLocal < todayLocal;
+  return dueDate < today;
 }

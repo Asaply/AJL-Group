@@ -1,3 +1,6 @@
+/** IANA time zone the app operates in, used for "today" date calculations. */
+export const APP_TIME_ZONE = "America/Mexico_City";
+
 export const PRIORITY_COLORS = {
   urgent: "#EF4444",
   high: "#F97316",

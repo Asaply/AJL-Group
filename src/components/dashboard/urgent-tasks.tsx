@@ -3,12 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PRIORITY_COLORS } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
-import { selectUrgentTasks, isOverdue } from "@/lib/tasks";
+import { selectUrgentTasks, isOverdue, todayKey } from "@/lib/tasks";
 import type { Task } from "@/types";
 
 export function UrgentTasks({ tasks }: { tasks: Task[] }) {
   const urgent = selectUrgentTasks(tasks);
-  const today = new Date();
+  const today = todayKey();
 
   return (
     <Card>

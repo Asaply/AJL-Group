@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { selectUrgentTasks, isOverdue } from "./tasks";
+import { selectUrgentTasks, isOverdue, todayKey } from "./tasks";
 import type { TaskPriority, TaskStatus } from "@/types";
 
 interface MinimalTask {
@@ -76,8 +76,25 @@ describe("selectUrgentTasks", () => {
   });
 });
 
+describe("todayKey", () => {
+  it("returns the Mexico-City calendar date, which lags UTC in the evening", () => {
+    // 2026-09-25T02:00:00Z is 2026-09-24 20:00 in Mexico City (UTC-6, no DST).
+    expect(todayKey(new Date("2026-09-25T02:00:00Z"))).toBe("2026-09-24");
+  });
+
+  it("returns the Mexico-City calendar date at UTC midday", () => {
+    // 2026-09-24T12:00:00Z is 2026-09-24 06:00 in Mexico City.
+    expect(todayKey(new Date("2026-09-24T12:00:00Z"))).toBe("2026-09-24");
+  });
+
+  it("accepts an explicit time zone override", () => {
+    // 2026-09-25T02:00:00Z is already 2026-09-25 in UTC.
+    expect(todayKey(new Date("2026-09-25T02:00:00Z"), "UTC")).toBe("2026-09-25");
+  });
+});
+
 describe("isOverdue", () => {
-  const today = new Date(2026, 8, 24); // 2026-09-24 local
+  const today = "2026-09-24";
 
   it("returns true for a due_date in the past (yesterday)", () => {
     expect(isOverdue("2026-09-23", today)).toBe(true);
