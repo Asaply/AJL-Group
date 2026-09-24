@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { actionError, SAVE_ERROR, DELETE_ERROR } from "@/lib/action-error";
 import type { TaskPriority, TaskStatus } from "@/types";
 
 const TASK_PRIORITIES: TaskPriority[] = ["urgent", "high", "medium", "low"];
@@ -40,7 +41,7 @@ export async function createTask(formData: FormData) {
     assigned_to,
     created_by: user.id,
   });
-  if (error) return { error: error.message };
+  if (error) return actionError("createTask", error, SAVE_ERROR);
   revalidatePath("/tasks");
   revalidatePath("/calendar");
   revalidatePath("/");
@@ -49,12 +50,12 @@ export async function createTask(formData: FormData) {
 
 export async function updateTaskStatus(id: string, status: string) {
   if (!TASK_STATUSES.includes(status as TaskStatus)) {
-    return { error: "Status inválido" };
+    return { error: "Estado inválido" };
   }
 
   const supabase = await createClient();
   const { error } = await supabase.from("tasks").update({ status }).eq("id", id);
-  if (error) return { error: error.message };
+  if (error) return actionError("updateTaskStatus", error, SAVE_ERROR);
   revalidatePath("/tasks");
   revalidatePath("/");
   revalidatePath("/calendar");
@@ -64,7 +65,7 @@ export async function updateTaskStatus(id: string, status: string) {
 export async function deleteTask(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("tasks").delete().eq("id", id);
-  if (error) return { error: error.message };
+  if (error) return actionError("deleteTask", error, DELETE_ERROR);
   revalidatePath("/tasks");
   revalidatePath("/calendar");
   revalidatePath("/");

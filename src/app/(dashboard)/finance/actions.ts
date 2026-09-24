@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { actionError, SAVE_ERROR, DELETE_ERROR } from "@/lib/action-error";
 import type { TransactionType } from "@/types";
 
 const TRANSACTION_TYPES: TransactionType[] = ["income", "expense"];
@@ -44,7 +45,7 @@ export async function createTransaction(formData: FormData) {
     date,
     created_by: user.id,
   });
-  if (error) return { error: error.message };
+  if (error) return actionError("createTransaction", error, SAVE_ERROR);
   revalidatePath("/finance");
   revalidatePath("/");
 }
@@ -52,7 +53,7 @@ export async function createTransaction(formData: FormData) {
 export async function deleteTransaction(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("transactions").delete().eq("id", id);
-  if (error) return { error: error.message };
+  if (error) return actionError("deleteTransaction", error, DELETE_ERROR);
   revalidatePath("/finance");
   revalidatePath("/");
 }

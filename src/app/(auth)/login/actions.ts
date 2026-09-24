@@ -13,7 +13,10 @@ export async function login(formData: FormData) {
   });
 
   if (error) {
-    return { error: error.message };
+    // Log the real reason server-side; never reveal to the client whether
+    // the account exists or what exactly failed.
+    console.error("[login]", error.message);
+    return { error: "Credenciales inválidas" };
   }
 
   revalidatePath("/", "layout");

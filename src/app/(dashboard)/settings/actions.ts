@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { parseProfileForm } from "@/lib/profile";
+import { logActionError } from "@/lib/action-error";
 
 export async function updateProfile(formData: FormData) {
   const supabase = await createClient();
@@ -23,6 +24,7 @@ export async function updateProfile(formData: FormData) {
     .select("id");
 
   if (error || !data || data.length === 0) {
+    logActionError("updateProfile", error ?? "no row updated");
     return { error: "No se pudo actualizar el perfil" };
   }
 

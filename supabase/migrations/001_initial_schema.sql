@@ -13,6 +13,22 @@ CREATE TABLE users (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Partner check used by every RLS policy: only authenticated users that
+-- have a row in public.users (the 3 seeded partners) get access. A stray
+-- auth.users account (e.g. if public sign-up were ever left enabled) has
+-- no profile row and therefore sees nothing.
+-- SECURITY DEFINER so the lookup itself is not subject to the users RLS
+-- policy (which calls this function -- avoids infinite recursion).
+CREATE OR REPLACE FUNCTION public.is_partner()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid())
+$$;
+
 -- Projects
 CREATE TABLE projects (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -73,7 +89,9 @@ CREATE TABLE notes (
 -- Transactions
 CREATE TABLE transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  -- RESTRICT: financial records must never disappear as a side effect of
+  -- deleting a project; delete the transactions explicitly first.
+  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE RESTRICT,
   type transaction_type NOT NULL,
   amount DECIMAL(12,2) NOT NULL,
   description TEXT NOT NULL,
@@ -82,7 +100,17 @@ CREATE TABLE transactions (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- RLS Policies (full transparency - all authenticated users see everything)
+-- Indexes for the common filters/joins (FK columns, date ranges)
+CREATE INDEX tasks_assigned_to_idx ON tasks (assigned_to);
+CREATE INDEX tasks_project_id_idx ON tasks (project_id);
+CREATE INDEX tasks_due_date_idx ON tasks (due_date);
+CREATE INDEX transactions_project_id_idx ON transactions (project_id);
+CREATE INDEX transactions_date_idx ON transactions (date);
+CREATE INDEX project_members_user_id_idx ON project_members (user_id);
+CREATE INDEX project_links_project_id_idx ON project_links (project_id);
+
+-- RLS Policies (full transparency between partners - every partner sees
+-- everything; non-partner authenticated users see nothing)
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE project_links ENABLE ROW LEVEL SECURITY;
@@ -91,34 +119,40 @@ ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 
--- Users: all authenticated can read all, update own
-CREATE POLICY "Users: read all" ON users FOR SELECT TO authenticated USING (true);
+-- Users: partners can read all, update own (own row implies partner)
+CREATE POLICY "Users: read all" ON users FOR SELECT TO authenticated USING (public.is_partner());
 CREATE POLICY "Users: update own" ON users FOR UPDATE TO authenticated USING (id = auth.uid()) WITH CHECK (id = auth.uid());
 
--- Projects: full CRUD for authenticated
-CREATE POLICY "Projects: full access" ON projects FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Self-update is limited to profile fields: a partner cannot change their
+-- own id/email/created_at through the API.
+REVOKE UPDATE ON public.users FROM authenticated;
+GRANT UPDATE (name, avatar_url) ON public.users TO authenticated;
 
--- Project links: full CRUD for authenticated
-CREATE POLICY "Project links: full access" ON project_links FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Projects: full CRUD for partners
+CREATE POLICY "Projects: full access" ON projects FOR ALL TO authenticated USING (public.is_partner()) WITH CHECK (public.is_partner());
 
--- Project members: full CRUD for authenticated
-CREATE POLICY "Project members: full access" ON project_members FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Project links: full CRUD for partners
+CREATE POLICY "Project links: full access" ON project_links FOR ALL TO authenticated USING (public.is_partner()) WITH CHECK (public.is_partner());
 
--- Tasks: full CRUD for authenticated
-CREATE POLICY "Tasks: full access" ON tasks FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Project members: full CRUD for partners
+CREATE POLICY "Project members: full access" ON project_members FOR ALL TO authenticated USING (public.is_partner()) WITH CHECK (public.is_partner());
+
+-- Tasks: full CRUD for partners
+CREATE POLICY "Tasks: full access" ON tasks FOR ALL TO authenticated USING (public.is_partner()) WITH CHECK (public.is_partner());
 
 -- Notes: read own personal + all shared, CRUD own
 CREATE POLICY "Notes: read own or shared" ON notes FOR SELECT TO authenticated
-  USING (is_shared = true OR author_id = auth.uid());
+  USING (public.is_partner() AND (is_shared = true OR author_id = auth.uid()));
 CREATE POLICY "Notes: insert own" ON notes FOR INSERT TO authenticated
-  WITH CHECK (author_id = auth.uid());
+  WITH CHECK (public.is_partner() AND author_id = auth.uid());
 CREATE POLICY "Notes: update own" ON notes FOR UPDATE TO authenticated
-  USING (author_id = auth.uid()) WITH CHECK (author_id = auth.uid());
+  USING (public.is_partner() AND author_id = auth.uid())
+  WITH CHECK (public.is_partner() AND author_id = auth.uid());
 CREATE POLICY "Notes: delete own" ON notes FOR DELETE TO authenticated
-  USING (author_id = auth.uid());
+  USING (public.is_partner() AND author_id = auth.uid());
 
--- Transactions: full CRUD for authenticated
-CREATE POLICY "Transactions: full access" ON transactions FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Transactions: full CRUD for partners
+CREATE POLICY "Transactions: full access" ON transactions FOR ALL TO authenticated USING (public.is_partner()) WITH CHECK (public.is_partner());
 
 -- Auto-update updated_at on notes
 CREATE OR REPLACE FUNCTION update_updated_at()
@@ -135,4 +169,4 @@ CREATE TRIGGER notes_updated_at
   EXECUTE FUNCTION update_updated_at();
 
 -- Realtime: broadcast changes for live-updating dashboard views
-ALTER PUBLICATION supabase_realtime ADD TABLE projects, project_members, tasks, transactions;
+ALTER PUBLICATION supabase_realtime ADD TABLE projects, project_links, project_members, tasks, transactions;
