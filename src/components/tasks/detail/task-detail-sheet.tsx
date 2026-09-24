@@ -10,6 +10,9 @@ import { useCloseTask } from "@/components/tasks/use-open-task";
 import { getTaskDetail } from "@/app/(dashboard)/tasks/detail-actions";
 import { TaskFields } from "./task-fields";
 import { TaskDescription } from "./task-description";
+import { TaskChecklist } from "./task-checklist";
+import { TaskLinks } from "./task-links";
+import { TaskAttachments } from "./task-attachments";
 import type { TaskDetail } from "@/types";
 
 type LoadState = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; detail: TaskDetail };
@@ -75,7 +78,13 @@ export function TaskDetailSheet() {
             <TaskFields detail={state.detail} reload={reload} />
             <Separator />
             <TaskDescription detail={state.detail} reload={reload} />
-            {/* Checklist, links, attachments (Task 5) and activity (Task 6) go below. */}
+            <Separator />
+            <TaskChecklist detail={state.detail} reload={reload} />
+            <Separator />
+            <TaskLinks detail={state.detail} reload={reload} />
+            <Separator />
+            <TaskAttachments detail={state.detail} reload={reload} />
+            {/* Activity (Task 6) goes below. */}
           </div>
         )}
       </SheetContent>
