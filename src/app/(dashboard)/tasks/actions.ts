@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { actionError, SAVE_ERROR, DELETE_ERROR, LOAD_ERROR } from "@/lib/action-error";
+import { actionError, logActionError, SAVE_ERROR, DELETE_ERROR, LOAD_ERROR } from "@/lib/action-error";
 import type { TaskPriority, TaskStatus } from "@/types";
 
 const TASK_PRIORITIES: TaskPriority[] = ["urgent", "high", "medium", "low"];
@@ -80,6 +80,17 @@ export async function updateTaskStatus(id: string, status: string) {
 
 export async function deleteTask(id: string) {
   const supabase = await createClient();
+  // Remove this task's files from Storage first; the rows cascade with the task.
+  const { data: files, error: filesError } = await supabase
+    .from("task_attachments")
+    .select("storage_path")
+    .eq("task_id", id);
+  if (filesError) {
+    logActionError("deleteTask:files", filesError);
+  } else if (files && files.length > 0) {
+    const { error: storageError } = await supabase.storage.from("task-files").remove(files.map((f) => f.storage_path));
+    if (storageError) logActionError("deleteTask:storage", storageError);
+  }
   const { error } = await supabase.from("tasks").delete().eq("id", id);
   if (error) return actionError("deleteTask", error, DELETE_ERROR);
   revalidatePath("/tasks");
