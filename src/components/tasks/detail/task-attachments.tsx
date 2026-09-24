@@ -13,7 +13,7 @@ import type { TaskAttachment, TaskDetail } from "@/types";
 export function TaskAttachments({ detail, reload }: { detail: TaskDetail; reload: () => void }) {
   const taskId = detail.task.id;
   const inputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState<string[]>([]);
+  const [uploading, setUploading] = useState<{ id: string; name: string }[]>([]);
   const [dragging, setDragging] = useState(false);
 
   async function uploadOne(file: File) {
@@ -22,9 +22,10 @@ export function TaskAttachments({ detail, reload }: { detail: TaskDetail; reload
       toast.error(`${file.name}: ${problem}`);
       return;
     }
-    setUploading((u) => [...u, file.name]);
+    const id = crypto.randomUUID();
+    setUploading((u) => [...u, { id, name: file.name }]);
     const supabase = createClient();
-    const path = storagePath(taskId, file.name, crypto.randomUUID());
+    const path = storagePath(taskId, file.name, id);
     const { error: uploadError } = await supabase.storage
       .from("task-files")
       .upload(path, file, { contentType: file.type || undefined, upsert: false });
@@ -40,10 +41,12 @@ export function TaskAttachments({ detail, reload }: { detail: TaskDetail; reload
       });
       if (result?.error) {
         toast.error(`${file.name}: ${result.error}`);
-        await supabase.storage.from("task-files").remove([path]); // don't leave an orphan object
+        // don't leave an orphan object; log if even the cleanup fails
+        const { error: cleanupError } = await supabase.storage.from("task-files").remove([path]);
+        if (cleanupError) console.error("[TaskAttachments] cleanup failed", path, cleanupError);
       }
     }
-    setUploading((u) => u.filter((n) => n !== file.name));
+    setUploading((u) => u.filter((entry) => entry.id !== id));
   }
 
   async function uploadFiles(files: FileList | File[]) {
@@ -79,9 +82,9 @@ export function TaskAttachments({ detail, reload }: { detail: TaskDetail; reload
           }}
         />
       </div>
-      {uploading.map((name) => (
-        <p key={name} className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-3 w-3 animate-spin" />Subiendo {name}…
+      {uploading.map((entry) => (
+        <p key={entry.id} className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-3 w-3 animate-spin" />Subiendo {entry.name}…
         </p>
       ))}
       {detail.attachments.length === 0 && uploading.length === 0 && (
