@@ -9,6 +9,12 @@ export function toDateKey(year: number, monthIndex: number, day: number): string
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
+/** Inverse of `toDateKey`: "YYYY-MM-DD" → { year, monthIndex (0-based), day }. */
+export function parseDateKey(key: string): { year: number; monthIndex: number; day: number } {
+  const [year, month, day] = key.split("-").map(Number);
+  return { year, monthIndex: month - 1, day };
+}
+
 /**
  * Builds the cells for a month grid, Sunday-start: `null` for the leading
  * blanks before the 1st, then `1..daysInMonth`.

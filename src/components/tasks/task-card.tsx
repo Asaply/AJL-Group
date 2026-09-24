@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,12 @@ import type { Task, TaskStatus } from "@/types";
 
 export function TaskCard({ task }: { task: Task }) {
   const [status, setStatus] = useState<TaskStatus>(task.status);
+
+  // Resync the optimistic local status when the server value changes
+  // (realtime refresh or another partner's edit).
+  useEffect(() => {
+    setStatus(task.status);
+  }, [task.status]);
 
   async function handleStatusChange(value: string) {
     const previous = status;

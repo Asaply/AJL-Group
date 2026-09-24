@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { TaskCard } from "@/components/tasks/task-card";
 import { TaskForm } from "@/components/tasks/task-form";
 import { PRIORITY_COLORS } from "@/lib/constants";
-import { buildMonthCells, groupTasksByDate, toDateKey } from "@/lib/calendar";
+import { buildMonthCells, groupTasksByDate, parseDateKey, toDateKey } from "@/lib/calendar";
 import type { Task, TaskPriority, User, Project } from "@/types";
 
 const MONTHS = [
@@ -34,14 +34,19 @@ export function CalendarGrid({
   tasks,
   users,
   projects,
+  today,
 }: {
   tasks: Task[];
   users: User[];
   projects: Project[];
+  /** "YYYY-MM-DD" in the app time zone, computed on the server via todayKey(). */
+  today: string;
 }) {
-  const today = new Date();
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth());
+  // Derived from a server-computed key (APP_TIME_ZONE), never `new Date()`
+  // here: during SSR that would read the host's zone (UTC on Vercel).
+  const initial = parseDateKey(today);
+  const [year, setYear] = useState(initial.year);
+  const [month, setMonth] = useState(initial.monthIndex);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const tasksByDate = useMemo(() => groupTasksByDate(tasks), [tasks]);
@@ -94,8 +99,7 @@ export function CalendarGrid({
 
           const dateKey = toDateKey(year, month, day);
           const dayTasks = tasksByDate.get(dateKey) ?? [];
-          const isToday =
-            day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+          const isToday = dateKey === today;
 
           return (
             <button

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toDateKey, buildMonthCells, groupTasksByDate } from "./calendar";
+import { toDateKey, buildMonthCells, groupTasksByDate, parseDateKey } from "./calendar";
 
 describe("toDateKey", () => {
   it("formats year/month/day as YYYY-MM-DD", () => {
@@ -80,5 +80,17 @@ describe("groupTasksByDate", () => {
 
   it("returns an empty map for an empty array", () => {
     expect(groupTasksByDate([]).size).toBe(0);
+  });
+});
+
+describe("parseDateKey", () => {
+  it("splits a YYYY-MM-DD key into year, 0-based month index and day", () => {
+    expect(parseDateKey("2026-09-24")).toEqual({ year: 2026, monthIndex: 8, day: 24 });
+    expect(parseDateKey("2027-01-01")).toEqual({ year: 2027, monthIndex: 0, day: 1 });
+  });
+
+  it("round-trips with toDateKey", () => {
+    const { year, monthIndex, day } = parseDateKey("2026-12-31");
+    expect(toDateKey(year, monthIndex, day)).toBe("2026-12-31");
   });
 });

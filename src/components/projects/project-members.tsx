@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { addProjectMember, updateMemberPercentage, removeProjectMember } from "@/app/(dashboard)/projects/actions";
-import { percentageTotal, PERCENTAGE_TOLERANCE } from "@/lib/finance";
+import { percentageTotal, isHundred } from "@/lib/finance";
 import type { ProjectMember, User } from "@/types";
 
 function MemberRow({
@@ -16,14 +16,33 @@ function MemberRow({
   member: ProjectMember & { user: User };
   projectId: string;
 }) {
-  const [value, setValue] = useState(String(member.profit_percentage));
+  const stored = String(member.profit_percentage);
+  const [value, setValue] = useState(stored);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Resync with the server value when it changes (e.g. a realtime refresh
+  // after another partner edits it), unless the user is mid-edit.
+  useEffect(() => {
+    if (document.activeElement !== inputRef.current) setValue(stored);
+  }, [stored]);
 
   async function handleBlur() {
-    const percentage = parseFloat(value);
+    const trimmed = value.trim();
+    // An emptied input just reverts to the stored value.
+    if (!trimmed) {
+      setValue(stored);
+      return;
+    }
+    const percentage = Number(trimmed);
+    // Unchanged value: nothing to save.
+    if (percentage === Number(member.profit_percentage)) {
+      setValue(stored);
+      return;
+    }
     const result = await updateMemberPercentage(member.id, projectId, percentage);
     if (result?.error) {
       toast.error(result.error);
-      setValue(String(member.profit_percentage));
+      setValue(stored);
     }
   }
 
@@ -42,6 +61,7 @@ function MemberRow({
         <Input
           type="number"
           step="0.01"
+          ref={inputRef}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onBlur={handleBlur}
@@ -66,7 +86,7 @@ export function ProjectMembers({
   const [adding, setAdding] = useState(false);
   const availableUsers = allUsers.filter((u) => !members.some((m) => m.user_id === u.id));
   const total = percentageTotal(members);
-  const showWarning = Math.abs(total - 100) > PERCENTAGE_TOLERANCE;
+  const showWarning = !isHundred(total);
 
   async function handleAdd(formData: FormData) {
     const result = await addProjectMember(projectId, formData);

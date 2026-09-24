@@ -39,7 +39,9 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
       <Card>
         <CardHeader><CardTitle>Información general</CardTitle></CardHeader>
         <CardContent>
-          <ProjectEditForm project={project} />
+          {/* Keyed by the row data so the uncontrolled form re-mounts with fresh
+              defaultValues whenever the server data changes (realtime refresh). */}
+          <ProjectEditForm key={JSON.stringify(project)} project={project} />
         </CardContent>
       </Card>
 

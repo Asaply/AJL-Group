@@ -54,8 +54,18 @@ export function percentageTotal(members: { profit_percentage: MoneyLike }[]): nu
 
 export const PERCENTAGE_TOLERANCE = 0.01;
 
+/** True when `total` is more than 100 by strictly more than the tolerance (100.01 ok, 100.02 not). */
 export function exceedsHundred(total: number): boolean {
-  return total > 100 + PERCENTAGE_TOLERANCE;
+  return round2(total - 100) > PERCENTAGE_TOLERANCE;
+}
+
+/**
+ * True when `total` is 100 within the tolerance. 99.99 (the default
+ * 3 x 33.33 split) and 100.01 both count as 100; 99.98 / 100.02 do not.
+ * `round2` absorbs float noise such as |99.99 - 100| = 0.010000000000005.
+ */
+export function isHundred(total: number): boolean {
+  return round2(Math.abs(total - 100)) <= PERCENTAGE_TOLERANCE;
 }
 
 export function financeTotals(projects: ProjectMoney[]): { income: number; cost: number; margin: number } {

@@ -7,6 +7,7 @@ import {
   percentageTotal,
   PERCENTAGE_TOLERANCE,
   exceedsHundred,
+  isHundred,
   financeTotals,
   partnerTotals,
   transactionTotals,
@@ -105,6 +106,33 @@ describe("exceedsHundred", () => {
 
   it("is true at 100.02 (beyond tolerance)", () => {
     expect(exceedsHundred(100.02)).toBe(true);
+  });
+
+  it("is false for a float-summed 100.01 (e.g. 33.34 + 33.34 + 33.33)", () => {
+    expect(exceedsHundred(33.34 + 33.34 + 33.33)).toBe(false);
+  });
+});
+
+describe("isHundred", () => {
+  it("treats 99.99 (default 3 x 33.33 split) as 100", () => {
+    expect(isHundred(99.99)).toBe(true);
+    expect(isHundred(33.33 + 33.33 + 33.33)).toBe(true);
+  });
+
+  it("is true at exactly 100", () => {
+    expect(isHundred(100)).toBe(true);
+  });
+
+  it("is true at 100.01", () => {
+    expect(isHundred(100.01)).toBe(true);
+  });
+
+  it("is false at 100.02", () => {
+    expect(isHundred(100.02)).toBe(false);
+  });
+
+  it("is false at 99.98", () => {
+    expect(isHundred(99.98)).toBe(false);
   });
 });
 

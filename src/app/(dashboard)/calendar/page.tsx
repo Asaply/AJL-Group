@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { CalendarGrid } from "@/components/calendar/calendar-grid";
+import { todayKey } from "@/lib/tasks";
 
 export default async function CalendarPage() {
   const supabase = await createClient();
@@ -16,7 +17,7 @@ export default async function CalendarPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Calendario</h1>
-      <CalendarGrid tasks={tasks || []} users={users || []} projects={projects || []} />
+      <CalendarGrid tasks={tasks || []} users={users || []} projects={projects || []} today={todayKey()} />
     </div>
   );
 }
