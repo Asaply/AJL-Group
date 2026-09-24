@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/sidebar";
+import { RealtimeRefresh } from "@/components/realtime-refresh";
 import { logout } from "@/app/(auth)/login/actions";
 import { Button } from "@/components/ui/button";
 
@@ -32,6 +33,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="flex h-screen">
       <Sidebar user={profile} />
+      <RealtimeRefresh />
       <main className="flex-1 overflow-y-auto p-6">
         {children}
       </main>
