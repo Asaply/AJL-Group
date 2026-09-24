@@ -65,9 +65,12 @@ export interface Task {
   assigned_to: string;
   created_by: string;
   created_at: string;
+  updated_at: string;
   project?: Project;
   deliverable?: Deliverable | null;
   assignee?: User;
+  checklist?: { done: boolean }[];
+  attachments?: { count: number }[];
 }
 
 export interface Note {
@@ -91,4 +94,78 @@ export interface Transaction {
   created_by: string;
   created_at: string;
   project?: Project;
+}
+
+export interface TaskChecklistItem {
+  id: string;
+  task_id: string;
+  text: string;
+  done: boolean;
+  position: number;
+  created_at: string;
+}
+
+export interface TaskLink {
+  id: string;
+  task_id: string;
+  label: string;
+  url: string;
+  created_at: string;
+}
+
+export interface TaskComment {
+  id: string;
+  task_id: string;
+  author_id: string;
+  body: string;
+  created_at: string;
+  updated_at: string;
+  author?: User | null;
+}
+
+export type TaskEventField =
+  | "created"
+  | "title"
+  | "status"
+  | "priority"
+  | "due_date"
+  | "assigned_to"
+  | "project_id"
+  | "deliverable_id"
+  | "description";
+
+export interface TaskEvent {
+  id: string;
+  task_id: string;
+  actor_id: string | null;
+  field: TaskEventField;
+  old_value: string | null;
+  new_value: string | null;
+  created_at: string;
+  actor?: User | null;
+}
+
+export interface TaskAttachment {
+  id: string;
+  task_id: string;
+  uploaded_by: string;
+  storage_path: string;
+  file_name: string;
+  size_bytes: number;
+  mime_type: string | null;
+  created_at: string;
+  uploader?: User | null;
+}
+
+export interface TaskDetail {
+  task: Task & { deliverable?: Deliverable | null };
+  checklist: TaskChecklistItem[];
+  links: TaskLink[];
+  comments: TaskComment[];
+  events: TaskEvent[];
+  attachments: TaskAttachment[];
+  users: User[];
+  projects: Project[];
+  deliverables: Deliverable[];
+  currentUserId: string;
 }

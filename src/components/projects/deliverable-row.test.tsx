@@ -25,7 +25,7 @@ function task(status: Task["status"]): Task {
   return {
     id: `t-${status}-${Math.random()}`, title: "T", description: null, priority: "medium", status,
     due_date: null, project_id: "p1", deliverable_id: "d1", assigned_to: "u1", created_by: "u1",
-    created_at: "2026-09-24T00:00:00Z",
+    created_at: "2026-09-24T00:00:00Z", updated_at: "2026-09-24T00:00:00Z",
   };
 }
 
@@ -33,7 +33,7 @@ function unlinkedTask(title = "Sin ligar"): Task {
   return {
     id: `u-${Math.random()}`, title, description: null, priority: "medium", status: "pending",
     due_date: null, project_id: "p1", deliverable_id: null, assigned_to: "u1", created_by: "u1",
-    created_at: "2026-09-24T00:00:00Z",
+    created_at: "2026-09-24T00:00:00Z", updated_at: "2026-09-24T00:00:00Z",
   };
 }
 
