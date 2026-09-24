@@ -122,6 +122,35 @@ export async function revokeDeliverable(id: string, projectId: string) {
   revalidateDashboard();
 }
 
+export async function setTaskDeliverable(
+  taskId: string,
+  deliverableId: string | null,
+  projectId: string
+) {
+  const supabase = await createClient();
+
+  if (deliverableId) {
+    const { data: deliverable, error: dError } = await supabase
+      .from("deliverables")
+      .select("id")
+      .eq("id", deliverableId)
+      .eq("project_id", projectId)
+      .maybeSingle();
+    if (dError) return actionError("setTaskDeliverable:fetch", dError, LOAD_ERROR);
+    if (!deliverable) return { error: "El entregable no pertenece a este proyecto" };
+  }
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .update({ deliverable_id: deliverableId })
+    .eq("id", taskId)
+    .eq("project_id", projectId)
+    .select("id");
+  if (error) return actionError("setTaskDeliverable", error, SAVE_ERROR);
+  if (!data || data.length === 0) return { error: "El pendiente no pertenece a este proyecto" };
+  revalidateDashboard();
+}
+
 export async function deleteDeliverable(id: string, projectId: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("deliverables").delete().eq("id", id).eq("project_id", projectId);

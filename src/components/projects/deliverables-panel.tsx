@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,11 +23,14 @@ export function DeliverablesPanel({
   projects: Project[];
 }) {
   const formRef = useRef<HTMLFormElement>(null);
+  const [busy, setBusy] = useState(false);
   const total = weightTotal(deliverables);
-  const unlinked = tasks.filter((t) => !t.deliverable_id).length;
+  const unlinkedTasks = tasks.filter((t) => !t.deliverable_id);
 
   async function handleAdd(formData: FormData) {
+    setBusy(true);
     const result = await createDeliverable(projectId, formData);
+    setBusy(false);
     if (result?.error) {
       toast.error(result.error);
       return;
@@ -60,13 +63,16 @@ export function DeliverablesPanel({
             users={users}
             projects={projects}
             deliverables={deliverables}
+            unlinkedTasks={unlinkedTasks}
           />
         ))}
       </ul>
 
-      {unlinked > 0 && (
+      {unlinkedTasks.length > 0 && (
         <p className="text-xs text-muted-foreground">
-          {unlinked === 1 ? "1 pendiente sin entregable" : `${unlinked} pendientes sin entregable`} (no afectan el progreso)
+          {unlinkedTasks.length === 1
+            ? "1 pendiente sin entregable"
+            : `${unlinkedTasks.length} pendientes sin entregable`} (no afectan el progreso)
         </p>
       )}
 
@@ -76,7 +82,7 @@ export function DeliverablesPanel({
           name="weight" type="number" step="0.01" min={0} max={100} placeholder="%"
           required className="w-24 text-right" aria-label="Peso del entregable"
         />
-        <Button type="submit" size="sm"><Plus className="h-4 w-4 mr-1" />Agregar</Button>
+        <Button type="submit" size="sm" disabled={busy}><Plus className="h-4 w-4 mr-1" />Agregar</Button>
       </form>
     </div>
   );
