@@ -43,6 +43,7 @@ script refuses to run until all of them are set.
    policies, the `notes.updated_at` trigger, and adds the tables to the
    `supabase_realtime` publication (live updates need no extra setup).
 3. Then run `supabase/migrations/002_project_color_deliverables.sql` the same way (migrations run in order).
+4. Then run `supabase/migrations/003_task_details.sql` (creates the private `task-files` Storage bucket too).
 
 ## 5. REQUIRED: disable public sign-up
 
