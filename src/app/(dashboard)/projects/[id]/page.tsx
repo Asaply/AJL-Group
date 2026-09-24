@@ -8,6 +8,7 @@ import { ProjectFinance } from "@/components/projects/project-finance";
 import { ProjectEditForm } from "@/components/projects/project-edit-form";
 import { DeliverablesPanel } from "@/components/projects/deliverables-panel";
 import { ProjectDot } from "@/components/projects/project-dot";
+import { OpenTaskButton } from "@/components/tasks/open-task-button";
 import { STATUS_LABELS, TASK_STATUS_LABELS } from "@/lib/constants";
 
 export default async function ProjectDetailPage({ params }: { params: { id: string } }) {
@@ -104,7 +105,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
             <ul className="space-y-2">
               {tasks.map((task) => (
                 <li key={task.id} className="flex items-center justify-between text-sm border rounded p-2">
-                  <span>{task.title}</span>
+                  <OpenTaskButton taskId={task.id}>{task.title}</OpenTaskButton>
                   <Badge variant="outline">
                     {TASK_STATUS_LABELS[task.status as keyof typeof TASK_STATUS_LABELS]}
                   </Badge>

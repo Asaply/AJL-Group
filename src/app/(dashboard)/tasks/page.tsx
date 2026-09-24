@@ -13,7 +13,9 @@ export default async function TasksPage({
 
   let query = supabase
     .from("tasks")
-    .select("*, assignee:users!assigned_to(*), project:projects(*)")
+    .select(
+      "*, assignee:users!assigned_to(*), project:projects(*), checklist:task_checklist_items(done), attachments:task_attachments(count)"
+    )
     .order("created_at", { ascending: false });
 
   if (searchParams.priority && searchParams.priority !== "all") {

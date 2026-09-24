@@ -12,6 +12,11 @@ vi.mock("@/app/(dashboard)/projects/deliverable-actions", () => ({
 }));
 vi.mock("@/app/(dashboard)/tasks/actions", () => ({ createTask: vi.fn() }));
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  usePathname: () => "/projects/p1",
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 import { DeliverableRow } from "./deliverable-row";
 import { revokeDeliverable, setTaskDeliverable } from "@/app/(dashboard)/projects/deliverable-actions";

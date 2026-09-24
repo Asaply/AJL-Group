@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { TaskForm } from "@/components/tasks/task-form";
+import { OpenTaskButton } from "@/components/tasks/open-task-button";
 import { deliverableStatus } from "@/lib/deliverables";
 import { DELIVERABLE_STATUS_LABELS, TASK_STATUS_LABELS } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
@@ -149,7 +150,12 @@ export function DeliverableRow({
             <ul className="space-y-1">
               {tasks.map((t) => (
                 <li key={t.id} className="flex items-center justify-between gap-2 text-sm">
-                  <span className={t.status === "completed" ? "line-through text-muted-foreground" : ""}>{t.title}</span>
+                  <OpenTaskButton
+                    taskId={t.id}
+                    className={t.status === "completed" ? "line-through text-muted-foreground" : ""}
+                  >
+                    {t.title}
+                  </OpenTaskButton>
                   <span className="flex items-center gap-1">
                     <span className="text-muted-foreground">{TASK_STATUS_LABELS[t.status]}</span>
                     <Button

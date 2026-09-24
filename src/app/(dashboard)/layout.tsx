@@ -1,9 +1,11 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/sidebar";
 import { RealtimeRefresh } from "@/components/realtime-refresh";
 import { logout } from "@/app/(auth)/login/actions";
 import { Button } from "@/components/ui/button";
+import { TaskDetailSheet } from "@/components/tasks/detail/task-detail-sheet";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -34,6 +36,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="flex h-screen">
       <Sidebar user={profile} />
       <RealtimeRefresh />
+      <Suspense fallback={null}>
+        <TaskDetailSheet />
+      </Suspense>
       <main className="flex-1 overflow-y-auto p-6">
         {children}
       </main>

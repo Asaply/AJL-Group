@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ProjectDot } from "@/components/projects/project-dot";
+import { OpenTaskButton } from "@/components/tasks/open-task-button";
 import { PRIORITY_COLORS } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import { selectUrgentTasks, isOverdue, todayKey } from "@/lib/tasks";
@@ -24,9 +24,7 @@ export function UrgentTasks({ tasks }: { tasks: Task[] }) {
               <div className="flex items-start gap-2">
                 <div className="w-2 h-2 rounded-full mt-1 shrink-0" style={{ backgroundColor: PRIORITY_COLORS[t.priority] }} />
                 <div className="flex flex-col gap-1">
-                  <Link href="/tasks" className="hover:underline">
-                    {t.title}
-                  </Link>
+                  <OpenTaskButton taskId={t.id}>{t.title}</OpenTaskButton>
                   {t.project && (
                     <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                       <ProjectDot color={t.project.color} />{t.project.name}
