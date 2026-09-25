@@ -3,19 +3,22 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { parseTaskField } from "@/lib/task-update";
-import { MAX_ATTACHMENT_BYTES } from "@/lib/attachments";
+import { parseAttachmentMeta } from "@/lib/attachments";
 import { moveItem } from "@/lib/deliverables";
 import { parseHttpUrl } from "@/lib/url";
 import { actionError, logActionError, SAVE_ERROR, DELETE_ERROR, LOAD_ERROR } from "@/lib/action-error";
 import type { TaskDetail } from "@/types";
 
 const BUCKET = "task-files";
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function revalidateDashboard() {
   revalidatePath("/", "layout");
 }
 
 export async function getTaskDetail(id: string): Promise<{ detail: TaskDetail } | { error: string }> {
+  // A malformed ?task= param would otherwise surface as a Postgres uuid cast error.
+  if (typeof id !== "string" || !UUID_RE.test(id)) return { error: "Pendiente no encontrado" };
   const supabase = await createClient();
   const {
     data: { user },
@@ -134,8 +137,14 @@ export async function updateChecklistItem(id: string, taskId: string, patch: { t
   if (Object.keys(update).length === 0) return;
 
   const supabase = await createClient();
-  const { error } = await supabase.from("task_checklist_items").update(update).eq("id", id).eq("task_id", taskId);
+  const { data, error } = await supabase
+    .from("task_checklist_items")
+    .update(update)
+    .eq("id", id)
+    .eq("task_id", taskId)
+    .select("id");
   if (error) return actionError("updateChecklistItem", error, SAVE_ERROR);
+  if (!data || data.length === 0) return { error: "Este paso ya no existe" };
   revalidateDashboard();
 }
 
@@ -162,8 +171,14 @@ export async function moveChecklistItem(id: string, taskId: string, direction: "
 
 export async function deleteChecklistItem(id: string, taskId: string) {
   const supabase = await createClient();
-  const { error } = await supabase.from("task_checklist_items").delete().eq("id", id).eq("task_id", taskId);
+  const { data, error } = await supabase
+    .from("task_checklist_items")
+    .delete()
+    .eq("id", id)
+    .eq("task_id", taskId)
+    .select("id");
   if (error) return actionError("deleteChecklistItem", error, DELETE_ERROR);
+  if (!data || data.length === 0) return { error: "Este paso ya no existe" };
   revalidateDashboard();
 }
 
@@ -183,8 +198,9 @@ export async function addTaskLink(taskId: string, formData: FormData) {
 
 export async function deleteTaskLink(id: string, taskId: string) {
   const supabase = await createClient();
-  const { error } = await supabase.from("task_links").delete().eq("id", id).eq("task_id", taskId);
+  const { data, error } = await supabase.from("task_links").delete().eq("id", id).eq("task_id", taskId).select("id");
   if (error) return actionError("deleteTaskLink", error, DELETE_ERROR);
+  if (!data || data.length === 0) return { error: "Este link ya no existe" };
   revalidateDashboard();
 }
 
@@ -240,11 +256,11 @@ export async function registerAttachment(
   taskId: string,
   meta: { storage_path: string; file_name: string; size_bytes: number; mime_type: string | null }
 ) {
-  if (!meta.storage_path.startsWith(`${taskId}/`)) return { error: "Ruta de archivo inválida" };
-  if (!Number.isFinite(meta.size_bytes) || meta.size_bytes <= 0 || meta.size_bytes > MAX_ATTACHMENT_BYTES) {
-    return { error: "El archivo supera 25 MB" };
-  }
-  const fileName = (meta.file_name || "").trim().slice(0, 255) || "archivo";
+  // Server actions receive untrusted input: check types and require the exact
+  // path the client builds, so a row can't point at another task's object.
+  const parsed = parseAttachmentMeta(taskId, meta);
+  if (!parsed.ok) return { error: parsed.error };
+  const { storage_path, file_name, size_bytes, mime_type } = parsed.value;
 
   const supabase = await createClient();
   const {
@@ -255,10 +271,10 @@ export async function registerAttachment(
   const { error } = await supabase.from("task_attachments").insert({
     task_id: taskId,
     uploaded_by: user.id,
-    storage_path: meta.storage_path,
-    file_name: fileName,
-    size_bytes: meta.size_bytes,
-    mime_type: meta.mime_type || null,
+    storage_path,
+    file_name,
+    size_bytes,
+    mime_type,
   });
   if (error) return actionError("registerAttachment", error, SAVE_ERROR);
   revalidateDashboard();
@@ -299,6 +315,8 @@ export async function getAttachmentUrl(
   const { data, error: signError } = await supabase.storage
     .from(BUCKET)
     .createSignedUrl(row.storage_path, 60, download ? { download: row.file_name } : undefined);
-  if (signError || !data) return actionError("getAttachmentUrl:sign", signError, LOAD_ERROR);
+  if (signError || !data) {
+    return actionError("getAttachmentUrl:sign", signError ?? new Error("createSignedUrl returned no data"), LOAD_ERROR);
+  }
   return { url: data.signedUrl };
 }
