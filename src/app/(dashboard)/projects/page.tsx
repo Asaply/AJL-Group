@@ -10,13 +10,13 @@ const NIL_UUID = "00000000-0000-0000-0000-000000000000";
 export default async function ProjectsPage({
   searchParams,
 }: {
-  searchParams: { status?: string; member?: string };
+  searchParams: { status?: string; member?: string; client?: string };
 }) {
   const supabase = await createClient();
 
   let query = supabase
     .from("projects")
-    .select("*, deliverables(id, weight, approved_at)")
+    .select("*, client:clients(id, name, logo_path), deliverables(id, weight, approved_at)")
     .order("created_at", { ascending: false });
 
   if (searchParams.status && searchParams.status !== "all") {
@@ -32,20 +32,30 @@ export default async function ProjectsPage({
     query = query.in("id", projectIds.length > 0 ? projectIds : [NIL_UUID]);
   }
 
-  const [{ data: projects }, { data: users }, { data: colorRows }] = await Promise.all([
+  if (searchParams.client === "none") {
+    query = query.is("client_id", null);
+  } else if (searchParams.client && searchParams.client !== "all") {
+    query = query.eq("client_id", searchParams.client);
+  }
+
+  const [{ data: projects }, { data: users }, { data: colorRows }, { data: clients }] = await Promise.all([
     query,
     supabase.from("users").select("*").order("name"),
     supabase.from("projects").select("color"),
+    supabase.from("clients").select("id, name").order("name"),
   ]);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Proyectos</h1>
-        <ProjectForm defaultColor={nextPaletteColor((colorRows || []).map((r) => r.color))} />
+        <ProjectForm
+          defaultColor={nextPaletteColor((colorRows || []).map((r) => r.color))}
+          clients={clients || []}
+        />
       </div>
       <Suspense fallback={null}>
-        <ProjectFilters users={users || []} />
+        <ProjectFilters users={users || []} clients={clients || []} />
       </Suspense>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {projects?.map((project) => (

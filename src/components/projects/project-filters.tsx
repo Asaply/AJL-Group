@@ -3,9 +3,15 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { STATUS_LABELS } from "@/lib/constants";
-import type { User } from "@/types";
+import type { Client, User } from "@/types";
 
-export function ProjectFilters({ users }: { users: User[] }) {
+export function ProjectFilters({
+  users,
+  clients,
+}: {
+  users: User[];
+  clients: Pick<Client, "id" | "name">[];
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -39,6 +45,14 @@ export function ProjectFilters({ users }: { users: User[] }) {
           {users.map((u) => (
             <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
           ))}
+        </SelectContent>
+      </Select>
+      <Select value={searchParams.get("client") || "all"} onValueChange={(v) => setParam("client", v)}>
+        <SelectTrigger className="w-48"><SelectValue placeholder="Cliente" /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Todos los clientes</SelectItem>
+          <SelectItem value="none">Sin cliente</SelectItem>
+          {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
         </SelectContent>
       </Select>
     </div>

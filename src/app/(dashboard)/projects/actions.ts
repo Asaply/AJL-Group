@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { percentageTotal, exceedsHundred } from "@/lib/finance";
 import { parseProjectForm, parseMemberForm, validatePercentage } from "@/lib/project-form";
 import { parseHttpUrl } from "@/lib/url";
-import { actionError, isForeignKeyViolation, SAVE_ERROR, DELETE_ERROR, LOAD_ERROR } from "@/lib/action-error";
+import { actionError, isForeignKeyViolation, logActionError, SAVE_ERROR, DELETE_ERROR, LOAD_ERROR } from "@/lib/action-error";
 
 const PERCENTAGE_SUM_ERROR = "La suma de porcentajes no puede exceder 100%";
 
@@ -18,11 +18,22 @@ function revalidateDashboard() {
   revalidatePath("/", "layout");
 }
 
+async function clientExists(supabase: Awaited<ReturnType<typeof createClient>>, clientId: string | null) {
+  if (!clientId) return { ok: true as const };
+  const { data, error } = await supabase.from("clients").select("id").eq("id", clientId).maybeSingle();
+  if (error) return { ok: false as const, result: actionError("project:client", error, LOAD_ERROR) };
+  if (!data) return { ok: false as const, result: { error: "Cliente no encontrado" } };
+  return { ok: true as const };
+}
+
 export async function createProject(formData: FormData) {
   const parsed = parseProjectForm(formData, "create");
   if (!parsed.ok) return { error: parsed.error };
 
   const supabase = await createClient();
+  const check = await clientExists(supabase, parsed.values.client_id);
+  if (!check.ok) return check.result;
+
   const { error } = await supabase.from("projects").insert(parsed.values);
   if (error) return actionError("createProject", error, SAVE_ERROR);
   revalidateDashboard();
@@ -33,8 +44,24 @@ export async function updateProject(id: string, formData: FormData) {
   if (!parsed.ok) return { error: parsed.error };
 
   const supabase = await createClient();
+  const check = await clientExists(supabase, parsed.values.client_id);
+  if (!check.ok) return check.result;
+
+  const { data: current, error: currentError } = await supabase
+    .from("projects")
+    .select("client_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (currentError) return actionError("updateProject:current", currentError, LOAD_ERROR);
+
   const { error } = await supabase.from("projects").update(parsed.values).eq("id", id);
   if (error) return actionError("updateProject", error, SAVE_ERROR);
+
+  if (current && current.client_id !== parsed.values.client_id) {
+    const { error: linksError } = await supabase.from("project_contacts").delete().eq("project_id", id);
+    if (linksError) logActionError("updateProject:project_contacts", linksError);
+  }
+
   revalidateDashboard();
 }
 

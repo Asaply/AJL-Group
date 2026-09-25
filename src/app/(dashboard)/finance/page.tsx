@@ -37,7 +37,7 @@ export default async function FinancePage({
   }
 
   const [{ data: projects }, { data: members }, { data: users }, { data: transactions }] = await Promise.all([
-    supabase.from("projects").select("*").order("name"),
+    supabase.from("projects").select("*, client:clients(id, name, logo_path)").order("name"),
     supabase.from("project_members").select("*, user:users(*)"),
     supabase.from("users").select("*").order("name"),
     query,

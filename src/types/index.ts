@@ -14,7 +14,7 @@ export interface User {
 export interface Project {
   id: string;
   name: string;
-  client: string;
+  client_id: string | null;
   status: ProjectStatus;
   color: string;
   start_date: string;
@@ -23,6 +23,7 @@ export interface Project {
   production_cost: number;
   created_at: string;
   deliverables?: Deliverable[];
+  client?: Pick<Client, "id" | "name" | "logo_path"> | null;
 }
 
 export interface ProjectLink {

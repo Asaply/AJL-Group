@@ -29,7 +29,7 @@ export function ProjectCard({ project }: { project: Project }) {
               {STATUS_LABELS[project.status]}
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground">{project.client}</p>
+          <p className="text-sm text-muted-foreground">{project.client?.name ?? "Sin cliente"}</p>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">

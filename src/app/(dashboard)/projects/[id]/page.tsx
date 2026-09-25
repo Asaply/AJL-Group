@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,16 +7,19 @@ import { ProjectLinks } from "@/components/projects/project-links";
 import { ProjectMembers } from "@/components/projects/project-members";
 import { ProjectFinance } from "@/components/projects/project-finance";
 import { ProjectEditForm } from "@/components/projects/project-edit-form";
+import { ProjectContacts } from "@/components/projects/project-contacts";
 import { DeliverablesPanel } from "@/components/projects/deliverables-panel";
 import { ProjectDot } from "@/components/projects/project-dot";
 import { OpenTaskButton } from "@/components/tasks/open-task-button";
 import { STATUS_LABELS, TASK_STATUS_LABELS } from "@/lib/constants";
 
+const NIL_UUID = "00000000-0000-0000-0000-000000000000";
+
 export default async function ProjectDetailPage({ params }: { params: { id: string } }) {
   const supabase = await createClient();
 
   const { data: project } = await supabase
-    .from("projects").select("*").eq("id", params.id).single();
+    .from("projects").select("*, client:clients(id, name, logo_path)").eq("id", params.id).single();
 
   if (!project) notFound();
 
@@ -26,6 +30,9 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
     { data: tasks },
     { data: deliverables },
     { data: activeProjects },
+    { data: clients },
+    { data: clientContacts },
+    { data: projectContacts },
   ] = await Promise.all([
     supabase.from("project_links").select("*").eq("project_id", params.id),
     supabase.from("project_members").select("*, user:users(*)").eq("project_id", params.id),
@@ -38,6 +45,9 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
       .order("position")
       .order("created_at"),
     supabase.from("projects").select("*").eq("status", "active").order("name"),
+    supabase.from("clients").select("id, name").order("name"),
+    supabase.from("client_contacts").select("*").eq("client_id", project.client_id ?? NIL_UUID).order("name"),
+    supabase.from("project_contacts").select("*, contact:client_contacts(*)").eq("project_id", params.id),
   ]);
 
   // The active-projects list drives the "linked project" Select in TaskForm.
@@ -55,14 +65,21 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
         <h1 className="text-3xl font-bold">{project.name}</h1>
         <Badge>{STATUS_LABELS[project.status as keyof typeof STATUS_LABELS]}</Badge>
       </div>
-      <p className="text-muted-foreground">Cliente: {project.client}</p>
+      <p className="text-muted-foreground">
+        Cliente:{" "}
+        {project.client ? (
+          <Link href={`/clients/${project.client.id}`} className="text-primary hover:underline">{project.client.name}</Link>
+        ) : (
+          "Sin cliente"
+        )}
+      </p>
 
       <Card>
         <CardHeader><CardTitle>Información general</CardTitle></CardHeader>
         <CardContent>
           {/* Keyed by the row data so the uncontrolled form re-mounts with fresh
               defaultValues whenever the server data changes (realtime refresh). */}
-          <ProjectEditForm key={JSON.stringify(project)} project={project} />
+          <ProjectEditForm key={JSON.stringify(project)} project={project} clients={clients || []} />
         </CardContent>
       </Card>
 
@@ -91,6 +108,19 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
           </CardContent>
         </Card>
       </div>
+
+      {project.client_id && (
+        <Card>
+          <CardContent className="pt-6">
+            <ProjectContacts
+              projectId={params.id}
+              clientId={project.client_id}
+              contacts={clientContacts || []}
+              links={projectContacts || []}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardContent className="pt-6">

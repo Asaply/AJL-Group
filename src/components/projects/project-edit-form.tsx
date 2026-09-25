@@ -9,9 +9,16 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { updateProject, deleteProject } from "@/app/(dashboard)/projects/actions";
 import { ColorPicker } from "@/components/projects/color-picker";
-import type { Project } from "@/types";
+import { ClientSelect } from "@/components/clients/client-select";
+import type { Client, Project } from "@/types";
 
-export function ProjectEditForm({ project }: { project: Project }) {
+export function ProjectEditForm({
+  project,
+  clients,
+}: {
+  project: Project;
+  clients: Pick<Client, "id" | "name">[];
+}) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
 
@@ -44,8 +51,8 @@ export function ProjectEditForm({ project }: { project: Project }) {
           <Input id="name" name="name" defaultValue={project.name} required />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="client">Cliente</Label>
-          <Input id="client" name="client" defaultValue={project.client} required />
+          <Label>Cliente (opcional)</Label>
+          <ClientSelect clients={clients} defaultValue={project.client_id} />
         </div>
       </div>
       <div className="space-y-2">

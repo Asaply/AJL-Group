@@ -23,10 +23,13 @@ export function ProjectBreakdown({ projects, members }: ProjectBreakdownData) {
           return (
             <div key={project.id} className="border rounded-lg p-4 space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <Link href={`/projects/${project.id}`} className="inline-flex items-center gap-2 font-semibold text-primary hover:underline">
-                  <ProjectDot color={project.color} />
-                  {project.name}
-                </Link>
+                <div>
+                  <Link href={`/projects/${project.id}`} className="inline-flex items-center gap-2 font-semibold text-primary hover:underline">
+                    <ProjectDot color={project.color} />
+                    {project.name}
+                  </Link>
+                  <p className="text-xs text-muted-foreground">{project.client?.name ?? "Sin cliente"}</p>
+                </div>
                 <div className="flex flex-wrap gap-4 text-sm">
                   <span className="text-muted-foreground">Presupuesto: {formatCurrency(project.budget)}</span>
                   <span className="text-muted-foreground">Costo: {formatCurrency(project.production_cost)}</span>

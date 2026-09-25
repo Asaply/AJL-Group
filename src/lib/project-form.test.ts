@@ -9,7 +9,7 @@ function fd(entries: Record<string, string>): FormData {
 
 const base = {
   name: "  Video  ",
-  client: "  ACME ",
+  client_id: "c1",
   status: "paused",
   start_date: "2026-09-01",
   end_date: "2026-10-01",
@@ -39,7 +39,7 @@ describe("parseProjectForm (create)", () => {
       ok: true,
       values: {
         name: "Video",
-        client: "ACME",
+        client_id: "c1",
         status: "paused",
         start_date: "2026-09-01",
         end_date: "2026-10-01",
@@ -78,7 +78,13 @@ describe("parseProjectForm (create)", () => {
 
   it("requires name and client", () => {
     expect(parseProjectForm(fd({ ...base, name: "   " }), "create")).toEqual({ ok: false, error: "El nombre es obligatorio" });
-    expect(parseProjectForm(fd({ ...base, client: "" }), "create")).toEqual({ ok: false, error: "El cliente es obligatorio" });
+  });
+
+  it("maps blank or 'none' client_id to null", () => {
+    const blank = parseProjectForm(fd({ ...base, client_id: "" }), "create");
+    expect(blank.ok && blank.values.client_id).toBeNull();
+    const none = parseProjectForm(fd({ ...base, client_id: "none" }), "update");
+    expect(none.ok && none.values.client_id).toBeNull();
   });
 
   it("requires a valid start_date", () => {

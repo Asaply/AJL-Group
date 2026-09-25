@@ -9,9 +9,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { createProject } from "@/app/(dashboard)/projects/actions";
 import { ColorPicker } from "@/components/projects/color-picker";
+import { ClientSelect } from "@/components/clients/client-select";
 import { Plus } from "lucide-react";
+import type { Client } from "@/types";
 
-export function ProjectForm({ defaultColor }: { defaultColor: string }) {
+export function ProjectForm({
+  defaultColor,
+  clients,
+}: {
+  defaultColor: string;
+  clients: Pick<Client, "id" | "name">[];
+}) {
   const [open, setOpen] = useState(false);
 
   async function handleSubmit(formData: FormData) {
@@ -38,8 +46,8 @@ export function ProjectForm({ defaultColor }: { defaultColor: string }) {
             <Input id="name" name="name" required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="client">Cliente</Label>
-            <Input id="client" name="client" required />
+            <Label>Cliente (opcional)</Label>
+            <ClientSelect clients={clients} defaultValue={null} />
           </div>
           <div className="space-y-2">
             <Label>Color</Label>

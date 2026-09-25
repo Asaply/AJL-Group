@@ -32,7 +32,7 @@ function parseMoney(raw: string): number | null {
 
 export interface ProjectFormValues {
   name: string;
-  client: string;
+  client_id: string | null;
   status: ProjectStatus;
   start_date: string;
   end_date: string | null;
@@ -50,8 +50,8 @@ export function parseProjectForm(
   const name = str(formData, "name");
   if (!name) return { ok: false, error: "El nombre es obligatorio" };
 
-  const client = str(formData, "client");
-  if (!client) return { ok: false, error: "El cliente es obligatorio" };
+  const rawClient = str(formData, "client_id");
+  const client_id = rawClient && rawClient !== "none" ? rawClient : null;
 
   const rawStatus = str(formData, "status");
   let status: ProjectStatus;
@@ -87,7 +87,7 @@ export function parseProjectForm(
   const color = parseHexColor(formData.get("color"));
   if (!color) return { ok: false, error: "Color inválido" };
 
-  const values: ProjectFormValues = { name, client, status, start_date, end_date, budget, production_cost, color };
+  const values: ProjectFormValues = { name, client_id, status, start_date, end_date, budget, production_cost, color };
 
   return { ok: true, values };
 }
