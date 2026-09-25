@@ -76,7 +76,7 @@ describe("parseProjectForm (create)", () => {
     expect(r2.ok && r2.values.status).toBe("active");
   });
 
-  it("requires name and client", () => {
+  it("requires name", () => {
     expect(parseProjectForm(fd({ ...base, name: "   " }), "create")).toEqual({ ok: false, error: "El nombre es obligatorio" });
   });
 
