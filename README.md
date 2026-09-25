@@ -44,6 +44,7 @@ script refuses to run until all of them are set.
    `supabase_realtime` publication (live updates need no extra setup).
 3. Then run `supabase/migrations/002_project_color_deliverables.sql` the same way (migrations run in order).
 4. Then run `supabase/migrations/003_task_details.sql` (creates the private `task-files` Storage bucket too).
+5. Then run `supabase/migrations/004_clients.sql` (moves each project's client text into the new Clients section and creates the public `client-logos` bucket).
 
 ## 5. REQUIRED: disable public sign-up
 
