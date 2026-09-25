@@ -20,7 +20,9 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { DeliverablesPanel } from "./deliverables-panel";
-import { setTaskDeliverable } from "@/app/(dashboard)/projects/deliverable-actions";
+import { approveDeliverable, moveDeliverable, setTaskDeliverable } from "@/app/(dashboard)/projects/deliverable-actions";
+
+const never = () => new Promise<undefined>(() => {});
 
 const deliverable: Deliverable = {
   id: "d1", project_id: "p1", title: "Login", weight: 100,
@@ -57,5 +59,33 @@ describe("DeliverablesPanel", () => {
   it("shows no warning when every task has a deliverable", () => {
     renderPanel([deliverable], [{ ...floating, deliverable_id: "d1" }]);
     expect(screen.queryByText(/sin entregable/)).toBeNull();
+  });
+
+  it("moves the progress bar the moment a deliverable is approved", () => {
+    vi.mocked(approveDeliverable).mockImplementationOnce(never);
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderPanel([deliverable], [{ ...floating, deliverable_id: "d1", status: "completed" }]);
+    expect(screen.getByText("0%")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Aprobar" }));
+    // "100%" now shows twice: the deliverable's weight and the progress bar.
+    expect(screen.queryByText("0%")).toBeNull();
+    expect(screen.getAllByText("100%")).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "Revocar" })).toBeInTheDocument();
+  });
+
+  it("clears the unlinked warning before the server answers", () => {
+    vi.mocked(setTaskDeliverable).mockImplementationOnce(never);
+    renderPanel([deliverable], [floating]);
+    fireEvent.change(screen.getByLabelText("Entregable para Suelto"), { target: { value: "d1" } });
+    expect(screen.queryByText(/sin entregable/)).toBeNull();
+  });
+
+  it("reorders deliverables at once", () => {
+    vi.mocked(moveDeliverable).mockImplementation(never);
+    const second = { ...deliverable, id: "d2", title: "Pagos", position: 1, weight: 0 };
+    renderPanel([deliverable, second], []);
+    fireEvent.click(screen.getAllByRole("button", { name: "Bajar" })[0]);
+    const titles = screen.getAllByText(/^(Login|Pagos)$/).map((el) => el.textContent);
+    expect(titles).toEqual(["Pagos", "Login"]);
   });
 });

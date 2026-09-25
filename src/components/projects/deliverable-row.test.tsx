@@ -19,7 +19,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { DeliverableRow } from "./deliverable-row";
-import { deleteDeliverable, revokeDeliverable } from "@/app/(dashboard)/projects/deliverable-actions";
+import { deleteDeliverable } from "@/app/(dashboard)/projects/deliverable-actions";
 
 const deliverable: Deliverable = {
   id: "d1", project_id: "p1", title: "Login", weight: 30,
@@ -34,10 +34,15 @@ function task(status: Task["status"]): Task {
   };
 }
 
+const onMove = vi.fn();
+const onApprove = vi.fn();
+const onRevoke = vi.fn();
+
 function renderRow(d: Deliverable, tasks: Task[]) {
   return render(
     <DeliverableRow
       deliverable={d} tasks={tasks} canMoveUp={false} canMoveDown={false}
+      onMove={onMove} onApprove={onApprove} onRevoke={onRevoke}
       users={[]} projects={[]} deliverables={[d]}
     />
   );
@@ -86,13 +91,13 @@ describe("DeliverableRow", () => {
     vi.spyOn(window, "confirm").mockReturnValue(false);
     renderRow({ ...deliverable, approved_at: "2026-09-24T10:00:00Z" }, [task("completed")]);
     fireEvent.click(screen.getByRole("button", { name: "Revocar" }));
-    expect(revokeDeliverable).not.toHaveBeenCalled();
+    expect(onRevoke).not.toHaveBeenCalled();
   });
 
   it("revokes after confirmation", () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     renderRow({ ...deliverable, approved_at: "2026-09-24T10:00:00Z" }, [task("completed")]);
     fireEvent.click(screen.getByRole("button", { name: "Revocar" }));
-    expect(revokeDeliverable).toHaveBeenCalledWith("d1", "p1");
+    expect(onRevoke).toHaveBeenCalledWith("d1");
   });
 });

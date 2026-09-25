@@ -12,10 +12,7 @@ import { deliverableStatus } from "@/lib/deliverables";
 import { DELIVERABLE_STATUS_LABELS, TASK_STATUS_LABELS } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import {
-  approveDeliverable,
   deleteDeliverable,
-  moveDeliverable,
-  revokeDeliverable,
   updateDeliverable,
 } from "@/app/(dashboard)/projects/deliverable-actions";
 import type { Deliverable, Project, Task, User } from "@/types";
@@ -23,9 +20,12 @@ import type { Deliverable, Project, Task, User } from "@/types";
 const STATUS_ICON = { pending: "⬜", ready: "🟡", approved: "✅" } as const;
 
 export function DeliverableRow({
-  deliverable, tasks, canMoveUp, canMoveDown, users, projects, deliverables,
+  deliverable, tasks, canMoveUp, canMoveDown, onMove, onApprove, onRevoke, users, projects, deliverables,
 }: {
   deliverable: Deliverable;
+  onMove: (id: string, direction: "up" | "down") => void;
+  onApprove: (id: string) => void;
+  onRevoke: (id: string) => void;
   tasks: Task[];
   canMoveUp: boolean;
   canMoveDown: boolean;
@@ -54,7 +54,7 @@ export function DeliverableRow({
 
   function handleApprove() {
     if (!confirm(`¿Aprobar "${deliverable.title}"? Contará ${deliverable.weight}% al progreso.`)) return;
-    run(() => approveDeliverable(id, projectId));
+    onApprove(id);
   }
 
   function handleDelete() {
@@ -68,7 +68,7 @@ export function DeliverableRow({
 
   function handleRevoke() {
     if (!confirm(`¿Revocar la aprobación de "${deliverable.title}"? Dejará de contar al progreso.`)) return;
-    run(() => revokeDeliverable(id, projectId));
+    onRevoke(id);
   }
 
   return (
@@ -128,11 +128,11 @@ export function DeliverableRow({
               </Button>
             )}
             <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Subir" disabled={!canMoveUp || busy}
-              onClick={() => run(() => moveDeliverable(id, projectId, "up"))}>
+              onClick={() => onMove(id, "up")}>
               <ArrowUp className="h-3 w-3" />
             </Button>
             <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Bajar" disabled={!canMoveDown || busy}
-              onClick={() => run(() => moveDeliverable(id, projectId, "down"))}>
+              onClick={() => onMove(id, "down")}>
               <ArrowDown className="h-3 w-3" />
             </Button>
             <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Editar" onClick={() => setEditing(true)}>

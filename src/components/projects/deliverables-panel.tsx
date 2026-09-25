@@ -8,13 +8,16 @@ import { Input } from "@/components/ui/input";
 import { ProjectProgressBar } from "@/components/projects/project-progress";
 import { DeliverableRow } from "@/components/projects/deliverable-row";
 import { isHundred } from "@/lib/finance";
-import { weightTotal } from "@/lib/deliverables";
+import { moveItem, weightTotal } from "@/lib/deliverables";
+import { useOptimisticState } from "@/lib/use-optimistic-state";
 import { OpenTaskButton } from "@/components/tasks/open-task-button";
-import { createDeliverable, setTaskDeliverable } from "@/app/(dashboard)/projects/deliverable-actions";
+import {
+  approveDeliverable, createDeliverable, moveDeliverable, revokeDeliverable, setTaskDeliverable,
+} from "@/app/(dashboard)/projects/deliverable-actions";
 import type { Deliverable, Project, Task, User } from "@/types";
 
 export function DeliverablesPanel({
-  projectId, color, deliverables, tasks, users, projects,
+  projectId, color, deliverables: serverDeliverables, tasks: serverTasks, users, projects,
 }: {
   projectId: string;
   color: string;
@@ -25,14 +28,41 @@ export function DeliverablesPanel({
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [busy, setBusy] = useState(false);
+  // Reorders and task links show at once; the server confirms behind the scenes.
+  const [deliverables, applyDeliverables] = useOptimisticState(serverDeliverables);
+  const [tasks, applyTasks] = useOptimisticState(serverTasks);
+  const moveQueueRef = useRef<Promise<unknown>>(Promise.resolve());
   const total = weightTotal(deliverables);
   const unlinkedTasks = tasks.filter((t) => !t.deliverable_id);
 
-  async function handleLink(taskId: string, deliverableId: string) {
-    setBusy(true);
-    const result = await setTaskDeliverable(taskId, deliverableId, projectId);
-    setBusy(false);
-    if (result?.error) toast.error(result.error);
+  function handleLink(taskId: string, deliverableId: string) {
+    applyTasks(
+      (list) => list.map((t) => (t.id === taskId ? { ...t, deliverable_id: deliverableId } : t)),
+      () => setTaskDeliverable(taskId, deliverableId, projectId)
+    );
+  }
+
+  // Approval lives here, not in the row, so the progress bar moves with it.
+  function patchDeliverable(id: string, patch: Partial<Deliverable>, action: () => Promise<{ error: string } | undefined>) {
+    applyDeliverables((list) => list.map((d) => (d.id === id ? { ...d, ...patch } : d)), action);
+  }
+
+  function handleApprove(id: string) {
+    patchDeliverable(id, { approved_at: new Date().toISOString() }, () => approveDeliverable(id, projectId));
+  }
+
+  function handleRevoke(id: string) {
+    patchDeliverable(id, { approved_at: null, approved_by: null, approver: undefined }, () => revokeDeliverable(id, projectId));
+  }
+
+  function handleMove(id: string, direction: "up" | "down") {
+    // Moves swap stored positions, so server calls run one after another.
+    const queued = moveQueueRef.current.then(() => moveDeliverable(id, projectId, direction));
+    moveQueueRef.current = queued.catch(() => undefined);
+    applyDeliverables((list) => {
+      const byId = new Map(list.map((d) => [d.id, d]));
+      return moveItem(list.map((d) => d.id), id, direction).map((dId) => byId.get(dId)!);
+    }, () => queued);
   }
 
   async function handleAdd(formData: FormData) {
@@ -68,6 +98,9 @@ export function DeliverablesPanel({
             tasks={tasks.filter((t) => t.deliverable_id === d.id)}
             canMoveUp={i > 0}
             canMoveDown={i < deliverables.length - 1}
+            onMove={handleMove}
+            onApprove={handleApprove}
+            onRevoke={handleRevoke}
             users={users}
             projects={projects}
             deliverables={deliverables}

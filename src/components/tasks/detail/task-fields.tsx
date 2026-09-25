@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProjectDot } from "@/components/projects/project-dot";
 import { PRIORITY_LABELS, TASK_STATUS_LABELS } from "@/lib/constants";
 import { isValidDateKey } from "@/lib/project-form";
+import { useOptimisticState } from "@/lib/use-optimistic-state";
 import { updateTaskField } from "@/app/(dashboard)/tasks/detail-actions";
 import type { TaskDetail } from "@/types";
 
@@ -17,7 +17,10 @@ function isSavableDueDate(value: string): boolean {
 }
 
 export function TaskFields({ detail, reload }: { detail: TaskDetail; reload: () => void }) {
-  const { task, users, projects, deliverables } = detail;
+  const { users, projects, deliverables } = detail;
+  // Selects read from this optimistic copy so a pick shows at once, not after the reload.
+  const [task, applyTask] = useOptimisticState(detail.task);
+  type TaskPatch = Partial<typeof task>;
   const [title, setTitle] = useState(task.title);
   useEffect(() => setTitle(task.title), [task.title]);
 
@@ -37,20 +40,31 @@ export function TaskFields({ detail, reload }: { detail: TaskDetail; reload: () 
   // A legacy project task without a deliverable shows the placeholder until one is picked.
   const location = task.deliverable_id ?? (task.project_id ? "" : "none");
 
-  async function save(field: string, value: string | null) {
-    const result = await updateTaskField(task.id, field, value);
-    if (result?.error) {
-      toast.error(result.error);
-      if (field === "title") setTitle(task.title);
-      if (field === "due_date") setDueDate(task.due_date ?? "");
-      return;
+  async function save(field: string, value: string | null, patch: TaskPatch = { [field]: value }) {
+    const previous = detail.task;
+    const ok = await applyTask((t) => ({ ...t, ...patch }), () => updateTaskField(previous.id, field, value));
+    if (!ok) {
+      if (field === "title") setTitle(previous.title);
+      if (field === "due_date") setDueDate(previous.due_date ?? "");
     }
     reload();
   }
 
+  function saveLocation(value: string) {
+    if (value === "none") {
+      save("project_id", null, { project_id: null, deliverable_id: null, project: undefined, deliverable: undefined });
+      return;
+    }
+    const deliverable = deliverables.find((d) => d.id === value);
+    const project = projects.find((p) => p.id === deliverable?.project_id);
+    save("deliverable_id", value, {
+      deliverable_id: value, project_id: deliverable?.project_id ?? null, deliverable, project,
+    });
+  }
+
   function saveDueDate() {
     if (dueDate === (task.due_date ?? "")) return;
-    if (isSavableDueDate(dueDate)) save("due_date", dueDate);
+    if (isSavableDueDate(dueDate)) save("due_date", dueDate, { due_date: dueDate || null });
     else setDueDate(task.due_date ?? "");
   }
 
@@ -124,7 +138,7 @@ export function TaskFields({ detail, reload }: { detail: TaskDetail; reload: () 
           <Label>Proyecto › Entregable</Label>
           <Select
             value={location}
-            onValueChange={(v) => (v === "none" ? save("project_id", null) : save("deliverable_id", v))}
+            onValueChange={saveLocation}
           >
             <SelectTrigger aria-label="Proyecto y entregable">
               <SelectValue placeholder="Elige un entregable" />

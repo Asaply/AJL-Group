@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { Task } from "@/types";
 
 const push = vi.fn();
@@ -12,6 +12,7 @@ vi.mock("@/app/(dashboard)/tasks/actions", () => ({ updateTaskStatus: vi.fn(), d
 vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
 
 import { TaskCard } from "./task-card";
+import { deleteTask } from "@/app/(dashboard)/tasks/actions";
 
 const task: Task = {
   id: "t1", title: "Ajustar login", description: null, priority: "medium", status: "pending",
@@ -57,5 +58,21 @@ describe("TaskCard", () => {
     render(<TaskCard task={task} />);
     expect(screen.getByText("☑ 1/2")).toBeInTheDocument();
     expect(screen.getByText("📎 2")).toBeInTheDocument();
+  });
+
+  it("hides a deleted task before the server answers", () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    vi.mocked(deleteTask).mockImplementationOnce(() => new Promise(() => {}));
+    render(<TaskCard task={task} />);
+    fireEvent.click(screen.getByRole("button", { name: "Eliminar pendiente" }));
+    expect(screen.queryByText("Ajustar login")).toBeNull();
+  });
+
+  it("brings the task back when the delete fails", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    vi.mocked(deleteTask).mockResolvedValueOnce({ error: "No se pudo eliminar" });
+    render(<TaskCard task={task} />);
+    fireEvent.click(screen.getByRole("button", { name: "Eliminar pendiente" }));
+    await waitFor(() => expect(screen.getByText("Ajustar login")).toBeInTheDocument());
   });
 });

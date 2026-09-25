@@ -16,6 +16,7 @@ import type { Task, TaskStatus } from "@/types";
 
 export function TaskCard({ task }: { task: Task }) {
   const [status, setStatus] = useState<TaskStatus>(task.status);
+  const [deleted, setDeleted] = useState(false);
   const openTask = useOpenTask();
   const progress = checklistProgress(task.checklist ?? []);
   const attachmentCount = task.attachments?.[0]?.count ?? 0;
@@ -38,9 +39,16 @@ export function TaskCard({ task }: { task: Task }) {
 
   async function handleDelete() {
     if (!confirm("¿Eliminar este pendiente?")) return;
+    // Hide the card at once; bring it back if the server refuses.
+    setDeleted(true);
     const result = await deleteTask(task.id);
-    if (result?.error) toast.error(result.error);
+    if (result?.error) {
+      toast.error(result.error);
+      setDeleted(false);
+    }
   }
+
+  if (deleted) return null;
 
   return (
     <div
