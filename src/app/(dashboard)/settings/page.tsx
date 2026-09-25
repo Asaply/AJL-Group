@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ProfileForm } from "@/components/settings/profile-form";
+import { PasswordForm } from "@/components/settings/password-form";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -21,6 +22,13 @@ export default async function SettingsPage() {
         <CardHeader><CardTitle>Perfil</CardTitle></CardHeader>
         <CardContent>
           <ProfileForm profile={profile} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle>Contraseña</CardTitle></CardHeader>
+        <CardContent>
+          <PasswordForm />
         </CardContent>
       </Card>
 
