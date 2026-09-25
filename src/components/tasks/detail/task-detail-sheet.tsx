@@ -13,6 +13,7 @@ import { TaskDescription } from "./task-description";
 import { TaskChecklist } from "./task-checklist";
 import { TaskLinks } from "./task-links";
 import { TaskAttachments } from "./task-attachments";
+import { TaskActivity } from "./task-activity";
 import type { TaskDetail } from "@/types";
 
 type LoadState = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; detail: TaskDetail };
@@ -84,7 +85,8 @@ export function TaskDetailSheet() {
             <TaskLinks detail={state.detail} reload={reload} />
             <Separator />
             <TaskAttachments detail={state.detail} reload={reload} />
-            {/* Activity (Task 6) goes below. */}
+            <Separator />
+            <TaskActivity detail={state.detail} reload={reload} />
           </div>
         )}
       </SheetContent>
