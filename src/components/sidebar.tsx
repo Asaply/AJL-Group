@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -22,6 +23,11 @@ const icons = {
 
 export function Sidebar({ user }: { user: User }) {
   const pathname = usePathname();
+  // Highlight the clicked item right away instead of waiting for the new page
+  // to arrive; the real pathname takes over once navigation lands.
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  useEffect(() => setPendingHref(null), [pathname]);
+  const currentPath = pendingHref ?? pathname;
   const avatarUrl = parseHttpUrl(user.avatar_url);
 
   return (
@@ -41,13 +47,19 @@ export function Sidebar({ user }: { user: User }) {
         {NAV_ITEMS.map((item) => {
           const Icon = icons[item.icon as keyof typeof icons];
           const isActive = item.href === "/"
-            ? pathname === "/"
-            : pathname.startsWith(item.href);
+            ? currentPath === "/"
+            : currentPath.startsWith(item.href);
 
           return (
             <Link
               key={item.href}
               href={item.href}
+              onClick={(e) => {
+                // Modified clicks open a new tab and leave this page as is.
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                if (item.href !== pathname) setPendingHref(item.href);
+              }}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
                 isActive
