@@ -22,6 +22,7 @@ vi.mock("@/lib/supabase/client", () => ({
 }));
 
 import { TaskAttachments } from "./task-attachments";
+import { registerAttachment } from "@/app/(dashboard)/tasks/detail-actions";
 
 const detail = {
   task: { id: "t1" },
@@ -52,5 +53,22 @@ describe("TaskAttachments", () => {
     resolvers[0]({ error: null });
 
     await waitFor(() => expect(screen.getAllByText(/Subiendo photo\.png/)).toHaveLength(1));
+  });
+
+  it("clears the uploading row and removes the object when registering throws", async () => {
+    vi.mocked(registerAttachment).mockRejectedValueOnce(new Error("network down"));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    render(<TaskAttachments detail={detail} reload={vi.fn()} />);
+
+    const input = screen.getByLabelText("Seleccionar archivos") as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [makeFile("doc.png")] } });
+
+    await waitFor(() => expect(resolvers).toHaveLength(1));
+    resolvers[0]({ error: null });
+
+    await waitFor(() => expect(screen.queryByText(/Subiendo doc\.png/)).not.toBeInTheDocument());
+    expect(removeMock).toHaveBeenCalledTimes(1);
+    expect(removeMock.mock.calls[0][0][0]).toMatch(/^t1\/[0-9a-f-]{36}-doc\.png$/);
+    errorSpy.mockRestore();
   });
 });

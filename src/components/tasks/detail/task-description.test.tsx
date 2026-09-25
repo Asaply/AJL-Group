@@ -85,4 +85,26 @@ describe("TaskDescription", () => {
 
     expect(updateTaskField).toHaveBeenCalledTimes(1);
   });
+
+  it("keeps text typed while a save is in flight when an older description arrives", async () => {
+    let resolveSave: (value: undefined) => void = () => {};
+    updateTaskField.mockImplementationOnce(
+      () => new Promise((resolve) => { resolveSave = resolve as (value: undefined) => void; })
+    );
+    const { rerender } = render(<TaskDescription detail={makeDetail()} reload={vi.fn()} />);
+    const textarea = screen.getByLabelText("Descripción");
+
+    fireEvent.change(textarea, { target: { value: "Primera" } });
+    await vi.advanceTimersByTimeAsync(1000); // save of "Primera" starts and stays pending
+    expect(updateTaskField).toHaveBeenCalledWith("t1", "description", "Primera");
+
+    fireEvent.change(textarea, { target: { value: "Primera y más" } });
+    resolveSave(undefined);
+    await vi.advanceTimersByTimeAsync(0);
+
+    // realtime echo of the first save arrives before the second save fires
+    rerender(<TaskDescription detail={makeDetail({ description: "Primera" })} reload={vi.fn()} />);
+
+    expect(screen.getByLabelText("Descripción")).toHaveValue("Primera y más");
+  });
 });

@@ -80,19 +80,24 @@ export async function updateTaskStatus(id: string, status: string) {
 
 export async function deleteTask(id: string) {
   const supabase = await createClient();
-  // Remove this task's files from Storage first; the rows cascade with the task.
+  // Collect the attachment paths first (the rows cascade away with the task),
+  // delete the task row, and only then remove the Storage objects. If the row
+  // delete fails nothing in Storage is touched, so the task keeps working
+  // files; if the Storage cleanup fails the worst case is a harmless orphan
+  // object, which is just logged.
   const { data: files, error: filesError } = await supabase
     .from("task_attachments")
     .select("storage_path")
     .eq("task_id", id);
-  if (filesError) {
-    logActionError("deleteTask:files", filesError);
-  } else if (files && files.length > 0) {
+  if (filesError) logActionError("deleteTask:files", filesError);
+
+  const { error } = await supabase.from("tasks").delete().eq("id", id);
+  if (error) return actionError("deleteTask", error, DELETE_ERROR);
+
+  if (files && files.length > 0) {
     const { error: storageError } = await supabase.storage.from("task-files").remove(files.map((f) => f.storage_path));
     if (storageError) logActionError("deleteTask:storage", storageError);
   }
-  const { error } = await supabase.from("tasks").delete().eq("id", id);
-  if (error) return actionError("deleteTask", error, DELETE_ERROR);
   revalidatePath("/tasks");
   revalidatePath("/calendar");
   revalidatePath("/");

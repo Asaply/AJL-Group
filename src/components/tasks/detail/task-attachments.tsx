@@ -26,13 +26,28 @@ export function TaskAttachments({ detail, reload }: { detail: TaskDetail; reload
     setUploading((u) => [...u, { id, name: file.name }]);
     const supabase = createClient();
     const path = storagePath(taskId, file.name, id);
-    const { error: uploadError } = await supabase.storage
-      .from("task-files")
-      .upload(path, file, { contentType: file.type || undefined, upsert: false });
+    let uploaded = false;
 
-    if (uploadError) {
-      toast.error(`${file.name}: no se pudo subir`);
-    } else {
+    // don't leave an orphan object; log if even the cleanup fails
+    async function cleanup() {
+      try {
+        const { error: cleanupError } = await supabase.storage.from("task-files").remove([path]);
+        if (cleanupError) console.error("[TaskAttachments] cleanup failed", path, cleanupError);
+      } catch (cleanupError) {
+        console.error("[TaskAttachments] cleanup failed", path, cleanupError);
+      }
+    }
+
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from("task-files")
+        .upload(path, file, { contentType: file.type || undefined, upsert: false });
+      if (uploadError) {
+        toast.error(`${file.name}: no se pudo subir`);
+        return;
+      }
+      uploaded = true;
+
       const result = await registerAttachment(taskId, {
         storage_path: path,
         file_name: file.name,
@@ -41,12 +56,15 @@ export function TaskAttachments({ detail, reload }: { detail: TaskDetail; reload
       });
       if (result?.error) {
         toast.error(`${file.name}: ${result.error}`);
-        // don't leave an orphan object; log if even the cleanup fails
-        const { error: cleanupError } = await supabase.storage.from("task-files").remove([path]);
-        if (cleanupError) console.error("[TaskAttachments] cleanup failed", path, cleanupError);
+        await cleanup();
       }
+    } catch (error) {
+      console.error("[TaskAttachments] upload failed", path, error);
+      toast.error(`${file.name}: no se pudo subir`);
+      if (uploaded) await cleanup();
+    } finally {
+      setUploading((u) => u.filter((entry) => entry.id !== id));
     }
-    setUploading((u) => u.filter((entry) => entry.id !== id));
   }
 
   async function uploadFiles(files: FileList | File[]) {

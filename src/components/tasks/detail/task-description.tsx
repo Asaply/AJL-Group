@@ -49,8 +49,12 @@ export function TaskDescription({ detail }: { detail: TaskDetail; reload: () => 
       setState("error");
       return;
     }
-    dirtyRef.current = false;
-    setState("saved");
+    // Only clear the dirty flag if nothing was typed while this save was in
+    // flight; otherwise a realtime echo of `next` would overwrite newer text.
+    if (valueRef.current === next) {
+      dirtyRef.current = false;
+      setState("saved");
+    }
   }
 
   function handleChange(next: string) {

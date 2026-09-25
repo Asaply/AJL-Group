@@ -110,7 +110,7 @@ Al dar click en un pendiente se abre un panel de detalle donde los socios pueden
 - **Links:** etiqueta trim no vacía (`"La etiqueta es obligatoria"`); URL vía `parseHttpUrl` (`"La URL no es válida"`).
 - **Comentarios:** cuerpo trim no vacío (`"El comentario no puede estar vacío"`); editar/borrar solo el autor; 0 filas afectadas → `"No puedes editar este comentario"` / `"No puedes eliminar este comentario"`; muestra "(editado)" si `updated_at > created_at` por más de 1 s.
 - **Archivos:** tamaño > 25 MB → rechazado en cliente antes de subir (`"El archivo supera 25 MB"`); el bucket también lo rechaza. Orden: subir a Storage → `registerAttachment` → si el registro falla, el cliente borra el objeto subido. Borrar: `deleteAttachment` borra la fila (RLS: solo quien subió) y luego el objeto; 0 filas → `"No puedes eliminar este archivo"`. Descarga: `getAttachmentUrl` → signed URL 60 s.
-- **Borrar pendiente:** `deleteTask` lista los `storage_path` de sus adjuntos, los borra del bucket y luego borra la fila (cascade limpia metadatos). Si el borrado en Storage falla, se loguea y se continúa con la fila.
+- **Borrar pendiente:** `deleteTask` lista los `storage_path` de sus adjuntos, luego borra la fila del pendiente (cascade limpia metadatos) y solo después borra los objetos del bucket. Si el borrado de la fila falla, se devuelve el error sin tocar Storage (el pendiente conserva sus archivos). Si el borrado en Storage falla, se loguea: el peor caso es un objeto huérfano inofensivo, nunca una fila que apunte a un archivo inexistente.
 - **Timeline:** comentarios + eventos en orden cronológico ascendente (lo más nuevo abajo); empate por `created_at` → eventos antes que comentarios.
 
 ## 5. Lógica pura

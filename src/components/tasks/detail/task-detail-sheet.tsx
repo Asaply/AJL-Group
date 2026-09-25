@@ -49,6 +49,12 @@ export function TaskDetailSheet() {
         debounced.trigger()
       );
     });
+    // Supabase Realtime can't apply filters to DELETE events (the old record
+    // only carries the primary key), so the filtered listeners above never see
+    // deletes. Listen to all DELETEs on the child tables and just refetch.
+    TASK_DETAIL_TABLES.forEach((table) => {
+      channel.on("postgres_changes", { event: "DELETE", schema: "public", table }, () => debounced.trigger());
+    });
     channel.on("postgres_changes", { event: "*", schema: "public", table: "tasks", filter: `id=eq.${taskId}` }, () =>
       debounced.trigger()
     );
