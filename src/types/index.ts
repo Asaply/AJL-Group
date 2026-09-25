@@ -169,3 +169,49 @@ export interface TaskDetail {
   deliverables: Deliverable[];
   currentUserId: string;
 }
+
+export type ClientStatus = "prospect" | "active" | "inactive";
+
+export interface ClientContact {
+  id: string;
+  client_id: string;
+  name: string;
+  position: string | null;
+  email: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  notes: string | null;
+  is_primary: boolean;
+  created_at: string;
+  project_contacts?: ProjectContact[];
+}
+
+export interface ProjectContact {
+  id: string;
+  project_id: string;
+  contact_id: string;
+  role: string | null;
+  created_at: string;
+  contact?: ClientContact | null;
+  project?: Pick<Project, "id" | "name" | "color"> | null;
+}
+
+export interface Client {
+  id: string;
+  name: string;
+  status: ClientStatus;
+  industry: string | null;
+  website: string | null;
+  city: string | null;
+  notes: string | null;
+  legal_name: string | null;
+  rfc: string | null;
+  tax_regime: string | null;
+  tax_address: string | null;
+  cfdi_use: string | null;
+  logo_path: string | null;
+  created_at: string;
+  updated_at: string;
+  contacts?: ClientContact[];
+  projects?: Project[];
+}
