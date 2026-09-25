@@ -31,8 +31,13 @@ export function ClientFormDialog({ client, trigger }: { client?: Client; trigger
     if (!client && result && "id" in result) router.push(`/clients/${result.id}`);
   }
 
+  function handleOpenChange(next: boolean) {
+    if (next) setStatus(client?.status ?? "active");
+    setOpen(next);
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader><DialogTitle>{client ? "Editar cliente" : "Nuevo cliente"}</DialogTitle></DialogHeader>

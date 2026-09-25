@@ -47,7 +47,9 @@ export default async function ClientsPage({
     query,
     supabase.from("clients").select("industry").not("industry", "is", null),
   ]);
-  const industries = Array.from(new Set((industryRows || []).map((r) => r.industry as string))).sort();
+  const industries = Array.from(new Set((industryRows || []).map((r) => r.industry as string))).sort((a, b) =>
+    a.localeCompare(b, "es")
+  );
 
   return (
     <div className="space-y-6">

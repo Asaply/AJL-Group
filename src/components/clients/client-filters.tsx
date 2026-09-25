@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -12,9 +12,16 @@ export function ClientFilters({ industries }: { industries: string[] }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [q, setQ] = useState(searchParams.get("q") ?? "");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Kept current every render so a pending debounce timer (or any other delayed
+  // caller) always builds the next URL from the latest params, not a stale
+  // closure captured when the timer was scheduled.
+  const searchParamsRef = useRef(searchParams);
+  searchParamsRef.current = searchParams;
 
   function setParam(key: string, value: string) {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParamsRef.current.toString());
     if (!value || value === "all") params.delete(key);
     else params.set(key, value);
     const query = params.toString();
@@ -22,18 +29,27 @@ export function ClientFilters({ industries }: { industries: string[] }) {
   }
 
   useEffect(() => {
-    const current = searchParams.get("q") ?? "";
+    const current = searchParamsRef.current.get("q") ?? "";
     if (q.trim() === current) return;
     const timer = setTimeout(() => setParam("q", q.trim()), 300);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- setParam reads the latest searchParams
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setParam reads the latest searchParams via ref
   }, [q]);
+
+  // Resync `q` from the URL on Back/Forward (or any external navigation), but
+  // never while the user is actively typing in the field.
+  useEffect(() => {
+    const current = searchParams.get("q") ?? "";
+    if (document.activeElement === inputRef.current) return;
+    setQ((prev) => (prev === current ? prev : current));
+  }, [searchParams]);
 
   return (
     <div className="flex flex-wrap gap-3">
       <div className="relative flex-1 min-w-56">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
+          ref={inputRef}
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Buscar cliente o contacto…"
