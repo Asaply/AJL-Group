@@ -35,6 +35,7 @@ export const TRANSACTION_TYPE_LABELS = {
 export const NAV_ITEMS = [
   { label: "Dashboard", href: "/", icon: "LayoutDashboard" },
   { label: "Proyectos", href: "/projects", icon: "FolderKanban" },
+  { label: "Clientes", href: "/clients", icon: "Building2" },
   { label: "Pendientes", href: "/tasks", icon: "ListTodo" },
   { label: "Finanzas", href: "/finance", icon: "DollarSign" },
   { label: "Calendario", href: "/calendar", icon: "Calendar" },

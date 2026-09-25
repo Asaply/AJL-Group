@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, FolderKanban, ListTodo, DollarSign,
-  Calendar, StickyNote, Settings, LogOut,
+  Calendar, StickyNote, Settings, LogOut, Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS } from "@/lib/constants";
@@ -17,7 +17,7 @@ import type { User } from "@/types";
 
 const icons = {
   LayoutDashboard, FolderKanban, ListTodo, DollarSign,
-  Calendar, StickyNote, Settings,
+  Calendar, StickyNote, Settings, Building2,
 };
 
 export function Sidebar({ user }: { user: User }) {
