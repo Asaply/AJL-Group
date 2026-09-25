@@ -81,7 +81,7 @@ Constraint app-level: el contacto debe pertenecer a `projects.client_id`.
 - Índices: `client_contacts(client_id)`, `project_contacts(project_id)`, `project_contacts(contact_id)`, `projects(client_id)`.
 - RLS en las 3 tablas: `FOR ALL TO authenticated USING (public.is_partner()) WITH CHECK (public.is_partner())`.
 - `ALTER PUBLICATION supabase_realtime ADD TABLE clients, client_contacts, project_contacts;` y agregarlas a `REALTIME_TABLES`.
-- Bucket `client-logos`: `public = true`, `file_size_limit = 2097152`, `allowed_mime_types = {image/png, image/jpeg, image/webp}`. Políticas en `storage.objects` con `bucket_id = 'client-logos'`: INSERT y DELETE si `public.is_partner()` (la lectura es pública por ser bucket público; no se crea política SELECT adicional).
+- Bucket `client-logos`: `public = true`, `file_size_limit = 2097152`, `allowed_mime_types = {image/png, image/jpeg, image/webp}`. Políticas en `storage.objects` con `bucket_id = 'client-logos'`: SELECT, INSERT y DELETE si `public.is_partner()` (la lectura por URL es pública por ser bucket público; la política SELECT es necesaria porque la API de Storage la exige para borrar objetos).
 
 ## 4. Reglas de negocio
 
