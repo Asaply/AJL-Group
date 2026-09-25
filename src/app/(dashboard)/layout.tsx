@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/auth";
 import { Sidebar } from "@/components/sidebar";
 import { RealtimeRefresh } from "@/components/realtime-refresh";
 import { logout } from "@/app/(auth)/login/actions";
@@ -9,7 +10,7 @@ import { TaskDetailSheet } from "@/components/tasks/detail/task-detail-sheet";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
-  const { data: { user: authUser } } = await supabase.auth.getUser();
+  const authUser = await getAuthUser();
 
   if (!authUser) redirect("/login");
 

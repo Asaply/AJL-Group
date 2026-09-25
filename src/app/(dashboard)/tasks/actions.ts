@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/auth";
 import { actionError, logActionError, SAVE_ERROR, DELETE_ERROR, LOAD_ERROR } from "@/lib/action-error";
 import type { TaskPriority, TaskStatus } from "@/types";
 
@@ -16,9 +17,7 @@ function normalizeProjectId(raw: FormDataEntryValue | null): string | null {
 
 export async function createTask(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) return { error: "No autenticado" };
 
   const title = ((formData.get("title") as string) || "").trim();

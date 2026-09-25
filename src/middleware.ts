@@ -25,7 +25,10 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  // getClaims() refreshes an expired session like getUser() did, but verifies
+  // the JWT locally instead of calling the Auth server on every request.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims ?? null;
 
   // Redirects must carry any auth cookies Supabase just refreshed onto
   // `supabaseResponse`; otherwise the refreshed session is dropped.

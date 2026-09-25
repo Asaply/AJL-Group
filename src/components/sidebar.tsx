@@ -54,6 +54,9 @@ export function Sidebar({ user }: { user: User }) {
             <Link
               key={item.href}
               href={item.href}
+              // Prefetch the whole page, data included, so a click shows it at
+              // once instead of a skeleton. Realtime refreshes keep it current.
+              prefetch
               onClick={(e) => {
                 // Modified clicks open a new tab and leave this page as is.
                 if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;

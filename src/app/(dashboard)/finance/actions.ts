@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/auth";
 import { actionError, SAVE_ERROR, DELETE_ERROR } from "@/lib/action-error";
 import type { TransactionType } from "@/types";
 
@@ -10,9 +11,7 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export async function createTransaction(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) return { error: "No autenticado" };
 
   const project_id = formData.get("project_id") as string;

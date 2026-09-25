@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/auth";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -6,7 +7,7 @@ import { ProfileForm } from "@/components/settings/profile-form";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
-  const { data: { user: authUser } } = await supabase.auth.getUser();
+  const authUser = await getAuthUser();
   if (!authUser) redirect("/login");
 
   const { data: profile } = await supabase.from("users").select("*").eq("id", authUser.id).single();

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/auth";
 import { parseTaskField } from "@/lib/task-update";
 import { parseAttachmentMeta } from "@/lib/attachments";
 import { moveItem } from "@/lib/deliverables";
@@ -20,9 +21,7 @@ export async function getTaskDetail(id: string): Promise<{ detail: TaskDetail } 
   // A malformed ?task= param would otherwise surface as a Postgres uuid cast error.
   if (typeof id !== "string" || !UUID_RE.test(id)) return { error: "Pendiente no encontrado" };
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) return { error: "No autenticado" };
 
   const [task, checklist, links, comments, events, attachments, users, projects, deliverables] = await Promise.all([
@@ -198,9 +197,7 @@ export async function addComment(taskId: string, body: string) {
   if (!trimmed) return { error: "El comentario no puede estar vacío" };
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) return { error: "No autenticado" };
 
   const { error } = await supabase.from("task_comments").insert({ task_id: taskId, author_id: user.id, body: trimmed });
@@ -250,9 +247,7 @@ export async function registerAttachment(
   const { storage_path, file_name, size_bytes, mime_type } = parsed.value;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) return { error: "No autenticado" };
 
   const { error } = await supabase.from("task_attachments").insert({

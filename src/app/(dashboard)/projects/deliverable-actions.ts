@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/auth";
 import { exceedsHundred } from "@/lib/finance";
 import { deliverableStatus, moveItem, weightTotal } from "@/lib/deliverables";
 import { parseDeliverableForm } from "@/lib/deliverable-form";
@@ -86,9 +87,7 @@ export async function moveDeliverable(id: string, projectId: string, direction: 
 
 export async function approveDeliverable(id: string, projectId: string) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) return { error: "No autenticado" };
 
   const [{ data: deliverable, error: dError }, { data: tasks, error: tError }] = await Promise.all([

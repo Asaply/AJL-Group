@@ -2,14 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/auth";
 import { normalizeNoteTitle } from "@/lib/notes";
 import { actionError, logActionError, SAVE_ERROR, DELETE_ERROR } from "@/lib/action-error";
 
 export async function createNote(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) return { error: "No autenticado" };
 
   const title = normalizeNoteTitle(formData.get("title"));
