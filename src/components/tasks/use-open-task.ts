@@ -28,6 +28,6 @@ export function useCloseTask() {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("task");
     const query = params.toString();
-    router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }, [router, pathname, searchParams]);
 }

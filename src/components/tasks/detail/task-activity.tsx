@@ -18,7 +18,6 @@ export function TaskActivity({ detail, reload }: { detail: TaskDetail; reload: (
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
   const sendingRef = useRef(false);
-  const formRef = useRef<HTMLFormElement>(null);
 
   async function send() {
     if (sendingRef.current) return;
@@ -56,7 +55,6 @@ export function TaskActivity({ detail, reload }: { detail: TaskDetail; reload: (
         )}
       </ul>
       <form
-        ref={formRef}
         onSubmit={(e) => { e.preventDefault(); send(); }}
         className="space-y-2"
       >
@@ -82,6 +80,7 @@ export function TaskActivity({ detail, reload }: { detail: TaskDetail; reload: (
 function CommentItem({ comment, mine, reload }: { comment: TaskComment; mine: boolean; reload: () => void }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(comment.body);
+  const busyRef = useRef(false);
   const edited = Date.parse(comment.updated_at) - Date.parse(comment.created_at) > EDIT_GRACE_MS;
 
   useEffect(() => {
@@ -89,7 +88,11 @@ function CommentItem({ comment, mine, reload }: { comment: TaskComment; mine: bo
   }, [comment.body, editing]);
 
   async function save() {
-    const result = await updateComment(comment.id, comment.task_id, draft);
+    if (busyRef.current) return;
+    busyRef.current = true;
+    const result = await updateComment(comment.id, comment.task_id, draft).finally(() => {
+      busyRef.current = false;
+    });
     if (result?.error) {
       toast.error(result.error);
       return;
@@ -99,8 +102,12 @@ function CommentItem({ comment, mine, reload }: { comment: TaskComment; mine: bo
   }
 
   async function remove() {
+    if (busyRef.current) return;
     if (!confirm("¿Eliminar este comentario?")) return;
-    const result = await deleteComment(comment.id, comment.task_id);
+    busyRef.current = true;
+    const result = await deleteComment(comment.id, comment.task_id).finally(() => {
+      busyRef.current = false;
+    });
     if (result?.error) toast.error(result.error);
     else reload();
   }
