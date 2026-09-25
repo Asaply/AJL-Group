@@ -31,6 +31,7 @@ export function TaskForm({
   const [open, setOpen] = useState(false);
   const [projectId, setProjectId] = useState(defaultProjectId ?? "none");
   const projectDeliverables = deliverables.filter((d) => d.project_id === projectId);
+  const missingDeliverables = projectId !== "none" && projectDeliverables.length === 0;
 
   async function handleSubmit(formData: FormData) {
     const result = await createTask(formData);
@@ -100,21 +101,31 @@ export function TaskForm({
               </Select>
             </div>
           </div>
-          {projectId !== "none" && projectDeliverables.length > 0 && (
+          {projectId !== "none" && (
             <div className="space-y-2">
-              <Label htmlFor="deliverable_id">Entregable (opcional)</Label>
-              <Select key={projectId} name="deliverable_id" defaultValue={defaultDeliverableId ?? "none"}>
-                <SelectTrigger id="deliverable_id"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sin entregable</SelectItem>
-                  {projectDeliverables.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>{d.title}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="deliverable_id">Entregable</Label>
+              {missingDeliverables ? (
+                <p className="text-sm text-amber-500">
+                  Este proyecto no tiene entregables. Crea uno antes de agregarle pendientes.
+                </p>
+              ) : (
+                <Select
+                  key={projectId}
+                  name="deliverable_id"
+                  required
+                  defaultValue={defaultDeliverableId ?? (projectDeliverables.length === 1 ? projectDeliverables[0].id : undefined)}
+                >
+                  <SelectTrigger id="deliverable_id"><SelectValue placeholder="Elige un entregable" /></SelectTrigger>
+                  <SelectContent>
+                    {projectDeliverables.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>{d.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           )}
-          <Button type="submit" className="w-full">Crear</Button>
+          <Button type="submit" className="w-full" disabled={missingDeliverables}>Crear</Button>
         </form>
       </DialogContent>
     </Dialog>

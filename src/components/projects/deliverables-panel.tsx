@@ -9,7 +9,8 @@ import { ProjectProgressBar } from "@/components/projects/project-progress";
 import { DeliverableRow } from "@/components/projects/deliverable-row";
 import { isHundred } from "@/lib/finance";
 import { weightTotal } from "@/lib/deliverables";
-import { createDeliverable } from "@/app/(dashboard)/projects/deliverable-actions";
+import { OpenTaskButton } from "@/components/tasks/open-task-button";
+import { createDeliverable, setTaskDeliverable } from "@/app/(dashboard)/projects/deliverable-actions";
 import type { Deliverable, Project, Task, User } from "@/types";
 
 export function DeliverablesPanel({
@@ -26,6 +27,13 @@ export function DeliverablesPanel({
   const [busy, setBusy] = useState(false);
   const total = weightTotal(deliverables);
   const unlinkedTasks = tasks.filter((t) => !t.deliverable_id);
+
+  async function handleLink(taskId: string, deliverableId: string) {
+    setBusy(true);
+    const result = await setTaskDeliverable(taskId, deliverableId, projectId);
+    setBusy(false);
+    if (result?.error) toast.error(result.error);
+  }
 
   async function handleAdd(formData: FormData) {
     setBusy(true);
@@ -63,17 +71,41 @@ export function DeliverablesPanel({
             users={users}
             projects={projects}
             deliverables={deliverables}
-            unlinkedTasks={unlinkedTasks}
           />
         ))}
       </ul>
 
       {unlinkedTasks.length > 0 && (
-        <p className="text-xs text-muted-foreground">
-          {unlinkedTasks.length === 1
-            ? "1 pendiente sin entregable"
-            : `${unlinkedTasks.length} pendientes sin entregable`} (no afectan el progreso)
-        </p>
+        <div className="space-y-2 rounded-lg border border-amber-500/50 p-3">
+          <p className="text-sm text-amber-500">
+            {unlinkedTasks.length === 1
+              ? "1 pendiente sin entregable. Todo pendiente del proyecto debe estar ligado a uno:"
+              : `${unlinkedTasks.length} pendientes sin entregable. Todo pendiente del proyecto debe estar ligado a uno:`}
+          </p>
+          <ul className="space-y-1">
+            {unlinkedTasks.map((t) => (
+              <li key={t.id} className="flex items-center justify-between gap-2 text-sm">
+                <OpenTaskButton taskId={t.id}>{t.title}</OpenTaskButton>
+                {deliverables.length > 0 ? (
+                  <select
+                    aria-label={`Entregable para ${t.title}`}
+                    className="h-8 w-48 rounded-md border border-input bg-transparent px-2 text-sm"
+                    value=""
+                    disabled={busy}
+                    onChange={(e) => e.target.value && handleLink(t.id, e.target.value)}
+                  >
+                    <option value="" disabled>Ligar a entregable…</option>
+                    {deliverables.map((d) => (
+                      <option key={d.id} value={d.id}>{d.title}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="text-muted-foreground">Crea un entregable para ligarlo</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       <form ref={formRef} action={handleAdd} className="flex items-center gap-2">

@@ -70,35 +70,22 @@ export async function updateTaskField(id: string, field: string, value: string |
   const supabase = await createClient();
   const patch: Record<string, string | null> = { [parsed.field]: parsed.value };
 
-  if (parsed.field === "project_id" || parsed.field === "deliverable_id") {
-    const { data: current, error: currentError } = await supabase
-      .from("tasks")
-      .select("project_id, deliverable_id")
-      .eq("id", id)
+  // A project task always hangs from a deliverable: picking a deliverable also sets
+  // its project, and the only project change allowed on its own is back to General.
+  if (parsed.field === "project_id") {
+    if (parsed.value) return { error: "Elige un entregable del proyecto" };
+    patch.deliverable_id = null;
+  }
+  if (parsed.field === "deliverable_id") {
+    if (!parsed.value) return { error: "El pendiente debe estar ligado a un entregable" };
+    const { data: deliverable, error: dError } = await supabase
+      .from("deliverables")
+      .select("project_id")
+      .eq("id", parsed.value)
       .maybeSingle();
-    if (currentError) return actionError("updateTaskField:current", currentError, LOAD_ERROR);
-    if (!current) return { error: "Pendiente no encontrado" };
-
-    const projectId = parsed.field === "project_id" ? parsed.value : current.project_id;
-    const deliverableId = parsed.field === "deliverable_id" ? parsed.value : current.deliverable_id;
-
-    if (deliverableId) {
-      let belongs = false;
-      if (projectId) {
-        const { data: deliverable, error: dError } = await supabase
-          .from("deliverables")
-          .select("id")
-          .eq("id", deliverableId)
-          .eq("project_id", projectId)
-          .maybeSingle();
-        if (dError) return actionError("updateTaskField:deliverable", dError, LOAD_ERROR);
-        belongs = !!deliverable;
-      }
-      if (!belongs) {
-        if (parsed.field === "deliverable_id") return { error: "El entregable no pertenece a este proyecto" };
-        patch.deliverable_id = null; // moving projects drops a deliverable from the old project
-      }
-    }
+    if (dError) return actionError("updateTaskField:deliverable", dError, LOAD_ERROR);
+    if (!deliverable) return { error: "Entregable no encontrado" };
+    patch.project_id = deliverable.project_id;
   }
 
   const { data, error } = await supabase.from("tasks").update(patch).eq("id", id).select("id");

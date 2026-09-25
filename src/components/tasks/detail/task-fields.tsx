@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProjectDot } from "@/components/projects/project-dot";
 import { PRIORITY_LABELS, TASK_STATUS_LABELS } from "@/lib/constants";
 import { isValidDateKey } from "@/lib/project-form";
@@ -30,7 +30,12 @@ export function TaskFields({ detail, reload }: { detail: TaskDetail; reload: () 
     if (document.activeElement !== dueDateRef.current) setDueDate(task.due_date ?? "");
   }, [task.due_date]);
 
-  const projectDeliverables = deliverables.filter((d) => d.project_id === task.project_id);
+  // Only projects with deliverables can hold tasks, so the picker lists deliverables grouped by project.
+  const projectsWithDeliverables = projects
+    .map((p) => ({ project: p, items: deliverables.filter((d) => d.project_id === p.id) }))
+    .filter((g) => g.items.length > 0);
+  // A legacy project task without a deliverable shows the placeholder until one is picked.
+  const location = task.deliverable_id ?? (task.project_id ? "" : "none");
 
   async function save(field: string, value: string | null) {
     const result = await updateTaskField(task.id, field, value);
@@ -115,28 +120,29 @@ export function TaskFields({ detail, reload }: { detail: TaskDetail; reload: () 
             }}
           />
         </div>
-        <div className="space-y-1">
-          <Label>Proyecto</Label>
-          <Select value={task.project_id ?? "none"} onValueChange={(v) => save("project_id", v)}>
-            <SelectTrigger aria-label="Proyecto"><SelectValue /></SelectTrigger>
+        <div className="col-span-2 space-y-1">
+          <Label>Proyecto › Entregable</Label>
+          <Select
+            value={location}
+            onValueChange={(v) => (v === "none" ? save("project_id", null) : save("deliverable_id", v))}
+          >
+            <SelectTrigger aria-label="Proyecto y entregable">
+              <SelectValue placeholder="Elige un entregable" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">General (sin proyecto)</SelectItem>
-              {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+              {projectsWithDeliverables.map(({ project, items }) => (
+                <SelectGroup key={project.id}>
+                  <SelectLabel>{project.name}</SelectLabel>
+                  {items.map((d) => <SelectItem key={d.id} value={d.id}>{d.title}</SelectItem>)}
+                </SelectGroup>
+              ))}
             </SelectContent>
           </Select>
+          {task.project_id && !task.deliverable_id && (
+            <p className="text-xs text-amber-500">Este pendiente no está ligado a ningún entregable.</p>
+          )}
         </div>
-        {task.project_id && (
-          <div className="space-y-1">
-            <Label>Entregable</Label>
-            <Select value={task.deliverable_id ?? "none"} onValueChange={(v) => save("deliverable_id", v)}>
-              <SelectTrigger aria-label="Entregable"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Sin entregable</SelectItem>
-                {projectDeliverables.map((d) => <SelectItem key={d.id} value={d.id}>{d.title}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
       </div>
     </div>
   );

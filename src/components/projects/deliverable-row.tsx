@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Pencil, Trash2, Unlink } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +16,6 @@ import {
   deleteDeliverable,
   moveDeliverable,
   revokeDeliverable,
-  setTaskDeliverable,
   updateDeliverable,
 } from "@/app/(dashboard)/projects/deliverable-actions";
 import type { Deliverable, Project, Task, User } from "@/types";
@@ -24,7 +23,7 @@ import type { Deliverable, Project, Task, User } from "@/types";
 const STATUS_ICON = { pending: "⬜", ready: "🟡", approved: "✅" } as const;
 
 export function DeliverableRow({
-  deliverable, tasks, canMoveUp, canMoveDown, users, projects, deliverables, unlinkedTasks,
+  deliverable, tasks, canMoveUp, canMoveDown, users, projects, deliverables,
 }: {
   deliverable: Deliverable;
   tasks: Task[];
@@ -33,7 +32,6 @@ export function DeliverableRow({
   users: User[];
   projects: Project[];
   deliverables: Deliverable[];
-  unlinkedTasks: Task[];
 }) {
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -60,8 +58,11 @@ export function DeliverableRow({
   }
 
   function handleDelete() {
-    const note = info.totalTasks > 0 ? ` Sus ${info.totalTasks} pendientes quedarán sin entregable.` : "";
-    if (!confirm(`¿Eliminar "${deliverable.title}"?${note}`)) return;
+    if (info.totalTasks > 0) {
+      toast.error("Mueve sus pendientes a otro entregable antes de eliminarlo");
+      return;
+    }
+    if (!confirm(`¿Eliminar "${deliverable.title}"?`)) return;
     run(() => deleteDeliverable(id, projectId));
   }
 
@@ -156,37 +157,12 @@ export function DeliverableRow({
                   >
                     {t.title}
                   </OpenTaskButton>
-                  <span className="flex items-center gap-1">
-                    <span className="text-muted-foreground">{TASK_STATUS_LABELS[t.status]}</span>
-                    <Button
-                      size="icon" variant="ghost" className="h-6 w-6" aria-label="Desligar pendiente" disabled={busy}
-                      onClick={() => run(() => setTaskDeliverable(t.id, null, projectId))}
-                    >
-                      <Unlink className="h-3 w-3" />
-                    </Button>
-                  </span>
+                  <span className="text-muted-foreground">{TASK_STATUS_LABELS[t.status]}</span>
                 </li>
               ))}
             </ul>
           ) : (
             <p className="text-sm text-muted-foreground">Sin pendientes ligados</p>
-          )}
-          {unlinkedTasks.length > 0 && (
-            <select
-              aria-label="Ligar pendiente existente"
-              className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
-              value=""
-              disabled={busy}
-              onChange={(e) => {
-                const taskId = e.target.value;
-                if (taskId) run(() => setTaskDeliverable(taskId, id, projectId));
-              }}
-            >
-              <option value="" disabled>Ligar pendiente existente</option>
-              {unlinkedTasks.map((t) => (
-                <option key={t.id} value={t.id}>{t.title}</option>
-              ))}
-            </select>
           )}
           <TaskForm
             users={users}

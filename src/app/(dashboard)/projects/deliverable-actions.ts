@@ -122,23 +122,18 @@ export async function revokeDeliverable(id: string, projectId: string) {
   revalidateDashboard();
 }
 
-export async function setTaskDeliverable(
-  taskId: string,
-  deliverableId: string | null,
-  projectId: string
-) {
+export async function setTaskDeliverable(taskId: string, deliverableId: string, projectId: string) {
+  if (!deliverableId) return { error: "El pendiente debe estar ligado a un entregable" };
   const supabase = await createClient();
 
-  if (deliverableId) {
-    const { data: deliverable, error: dError } = await supabase
-      .from("deliverables")
-      .select("id")
-      .eq("id", deliverableId)
-      .eq("project_id", projectId)
-      .maybeSingle();
-    if (dError) return actionError("setTaskDeliverable:fetch", dError, LOAD_ERROR);
-    if (!deliverable) return { error: "El entregable no pertenece a este proyecto" };
-  }
+  const { data: deliverable, error: dError } = await supabase
+    .from("deliverables")
+    .select("id")
+    .eq("id", deliverableId)
+    .eq("project_id", projectId)
+    .maybeSingle();
+  if (dError) return actionError("setTaskDeliverable:fetch", dError, LOAD_ERROR);
+  if (!deliverable) return { error: "El entregable no pertenece a este proyecto" };
 
   const { data, error } = await supabase
     .from("tasks")
@@ -153,6 +148,13 @@ export async function setTaskDeliverable(
 
 export async function deleteDeliverable(id: string, projectId: string) {
   const supabase = await createClient();
+  // Deleting would leave its tasks without a deliverable, so they must be moved first.
+  const { count, error: cError } = await supabase
+    .from("tasks")
+    .select("id", { count: "exact", head: true })
+    .eq("deliverable_id", id);
+  if (cError) return actionError("deleteDeliverable:tasks", cError, LOAD_ERROR);
+  if (count) return { error: "Mueve sus pendientes a otro entregable antes de eliminarlo" };
   const { error } = await supabase.from("deliverables").delete().eq("id", id).eq("project_id", projectId);
   if (error) return actionError("deleteDeliverable", error, DELETE_ERROR);
   revalidateDashboard();

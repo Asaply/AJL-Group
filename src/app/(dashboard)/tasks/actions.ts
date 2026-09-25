@@ -35,6 +35,8 @@ export async function createTask(formData: FormData) {
   const project_id = normalizeProjectId(formData.get("project_id"));
   const deliverable_id = normalizeProjectId(formData.get("deliverable_id"));
 
+  // A project task always hangs from a deliverable; only general tasks go without one.
+  if (project_id && !deliverable_id) return { error: "Asigna el pendiente a un entregable del proyecto" };
   if (deliverable_id) {
     if (!project_id) return { error: "El entregable no pertenece a este proyecto" };
     const { data: deliverable, error: dError } = await supabase
