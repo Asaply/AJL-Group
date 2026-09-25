@@ -1,4 +1,4 @@
-export const REALTIME_TABLES = ["projects", "project_links", "project_members", "tasks", "transactions", "deliverables", "clients", "client_contacts", "project_contacts"] as const;
+export const REALTIME_TABLES = ["projects", "project_links", "project_members", "tasks", "transactions", "deliverables", "clients", "client_contacts", "project_contacts", "project_files", "client_files"] as const;
 
 /** Child tables of a task; the detail panel subscribes to these filtered by task_id. */
 export const TASK_DETAIL_TABLES = [

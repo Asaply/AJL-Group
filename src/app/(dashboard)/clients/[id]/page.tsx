@@ -8,7 +8,11 @@ import { ClientProjects } from "@/components/clients/client-projects";
 import { ClientFiscal } from "@/components/clients/client-fiscal";
 import { ClientNotes } from "@/components/clients/client-notes";
 import { TaskCard } from "@/components/tasks/task-card";
+import { FileManager } from "@/components/files/file-manager";
 import { clientSummary } from "@/lib/clients";
+import {
+  getClientFileUrl, registerClientFile, softDeleteClientFile, updateClientFileType,
+} from "@/app/(dashboard)/clients/file-actions";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const NIL_UUID = "00000000-0000-0000-0000-000000000000";
@@ -17,7 +21,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
   if (!UUID_RE.test(params.id)) notFound();
   const supabase = await createSupabase();
 
-  const [{ data: client }, { data: contacts }, { data: projects }] = await Promise.all([
+  const [{ data: client }, { data: contacts }, { data: projects }, { data: files }] = await Promise.all([
     supabase.from("clients").select("*").eq("id", params.id).maybeSingle(),
     supabase
       .from("client_contacts")
@@ -28,6 +32,11 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     supabase
       .from("projects")
       .select("*, deliverables(id, weight, approved_at)")
+      .eq("client_id", params.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("client_files")
+      .select("*, uploader:users!uploaded_by(*), deleter:users!deleted_by(*)")
       .eq("client_id", params.id)
       .order("created_at", { ascending: false }),
   ]);
@@ -65,6 +74,21 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
         </Card>
       </div>
       <Card><CardContent className="pt-6"><ClientFiscal client={client} /></CardContent></Card>
+      <Card>
+        <CardContent className="pt-6">
+          <FileManager
+            entity="client"
+            ownerId={client.id}
+            files={files || []}
+            actions={{
+              register: registerClientFile,
+              softDelete: softDeleteClientFile,
+              updateType: updateClientFileType,
+              getUrl: getClientFileUrl,
+            }}
+          />
+        </CardContent>
+      </Card>
       <Card><CardContent className="pt-6"><ClientNotes clientId={client.id} notes={client.notes} /></CardContent></Card>
     </div>
   );

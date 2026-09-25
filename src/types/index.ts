@@ -216,3 +216,29 @@ export interface Client {
   contacts?: ClientContact[];
   projects?: Project[];
 }
+
+export type DocType = "contrato" | "acuerdo_nda" | "cotizacion" | "factura" | "otro";
+
+interface EntityFileBase {
+  id: string;
+  storage_path: string;
+  file_name: string;
+  size_bytes: number;
+  mime_type: string | null;
+  doc_type: DocType;
+  custom_label: string | null;
+  uploaded_by: string;
+  created_at: string;
+  deleted_at: string | null;
+  deleted_by: string | null;
+  uploader?: User | null;
+  deleter?: User | null;
+}
+
+export interface ProjectFile extends EntityFileBase {
+  project_id: string;
+}
+
+export interface ClientFile extends EntityFileBase {
+  client_id: string;
+}

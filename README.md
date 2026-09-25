@@ -45,6 +45,7 @@ script refuses to run until all of them are set.
 3. Then run `supabase/migrations/002_project_color_deliverables.sql` the same way (migrations run in order).
 4. Then run `supabase/migrations/003_task_details.sql` (creates the private `task-files` Storage bucket too).
 5. Then run `supabase/migrations/004_clients.sql` (moves each project's client text into the new Clients section and creates the public `client-logos` bucket). Deploy the app code together with this migration — it drops `projects.client`, so older app versions will fail.
+6. Then run `supabase/migrations/005_entity_files.sql` (adds `project_files` and `client_files` — contracts, agreements, quotes, invoices — and creates the private `entity-files` Storage bucket). Deletion is a soft delete: the row stays so the file list can show who deleted it and when.
 
 ## 5. REQUIRED: disable public sign-up
 

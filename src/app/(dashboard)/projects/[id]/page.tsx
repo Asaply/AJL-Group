@@ -11,7 +11,11 @@ import { ProjectContacts } from "@/components/projects/project-contacts";
 import { DeliverablesPanel } from "@/components/projects/deliverables-panel";
 import { ProjectDot } from "@/components/projects/project-dot";
 import { OpenTaskButton } from "@/components/tasks/open-task-button";
+import { FileManager } from "@/components/files/file-manager";
 import { STATUS_LABELS, TASK_STATUS_LABELS } from "@/lib/constants";
+import {
+  getProjectFileUrl, registerProjectFile, softDeleteProjectFile, updateProjectFileType,
+} from "@/app/(dashboard)/projects/file-actions";
 
 const NIL_UUID = "00000000-0000-0000-0000-000000000000";
 
@@ -33,6 +37,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
     { data: clients },
     { data: clientContacts },
     { data: projectContacts },
+    { data: files },
   ] = await Promise.all([
     supabase.from("project_links").select("*").eq("project_id", params.id),
     supabase.from("project_members").select("*, user:users(*)").eq("project_id", params.id),
@@ -48,6 +53,11 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
     supabase.from("clients").select("id, name").order("name"),
     supabase.from("client_contacts").select("*").eq("client_id", project.client_id ?? NIL_UUID).order("name"),
     supabase.from("project_contacts").select("*, contact:client_contacts(*)").eq("project_id", params.id),
+    supabase
+      .from("project_files")
+      .select("*, uploader:users!uploaded_by(*), deleter:users!deleted_by(*)")
+      .eq("project_id", params.id)
+      .order("created_at", { ascending: false }),
   ]);
 
   // The active-projects list drives the "linked project" Select in TaskForm.
@@ -125,6 +135,22 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
       <Card>
         <CardContent className="pt-6">
           <ProjectFinance project={project} members={members || []} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="pt-6">
+          <FileManager
+            entity="project"
+            ownerId={params.id}
+            files={files || []}
+            actions={{
+              register: registerProjectFile,
+              softDelete: softDeleteProjectFile,
+              updateType: updateProjectFileType,
+              getUrl: getProjectFileUrl,
+            }}
+          />
         </CardContent>
       </Card>
 
