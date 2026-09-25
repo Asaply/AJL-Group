@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { updateProject, deleteProject } from "@/app/(dashboard)/projects/actions";
@@ -83,11 +84,11 @@ export function ProjectEditForm({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="budget">Presupuesto ($)</Label>
-          <Input id="budget" name="budget" type="number" step="0.01" defaultValue={project.budget} />
+          <MoneyInput id="budget" name="budget" defaultValue={project.budget} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="production_cost">Costo Producción ($)</Label>
-          <Input id="production_cost" name="production_cost" type="number" step="0.01" defaultValue={project.production_cost} />
+          <MoneyInput id="production_cost" name="production_cost" defaultValue={project.production_cost} />
         </div>
       </div>
       <div className="flex justify-between pt-2">

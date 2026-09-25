@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -77,11 +78,11 @@ export function ProjectForm({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="budget">Presupuesto ($)</Label>
-              <Input id="budget" name="budget" type="number" step="0.01" defaultValue="0" />
+              <MoneyInput id="budget" name="budget" defaultValue="0" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="production_cost">Costo Producción ($)</Label>
-              <Input id="production_cost" name="production_cost" type="number" step="0.01" defaultValue="0" />
+              <MoneyInput id="production_cost" name="production_cost" defaultValue="0" />
             </div>
           </div>
           <Button type="submit" className="w-full">Crear</Button>

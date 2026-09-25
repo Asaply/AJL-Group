@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -65,7 +66,7 @@ export function TransactionForm({ projects }: { projects: Project[] }) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="amount">Monto ($)</Label>
-              <Input id="amount" name="amount" type="number" step="0.01" required />
+              <MoneyInput id="amount" name="amount" required />
             </div>
           </div>
           <div className="space-y-2">
