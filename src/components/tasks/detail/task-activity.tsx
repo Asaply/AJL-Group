@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { Pencil, Trash2 } from "lucide-react";
@@ -17,12 +17,16 @@ export function TaskActivity({ detail, reload }: { detail: TaskDetail; reload: (
   const timeline = mergeTimeline(detail.comments, detail.events);
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+  const sendingRef = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   async function send() {
+    if (sendingRef.current) return;
     if (!body.trim()) return;
+    sendingRef.current = true;
     setSending(true);
     const result = await addComment(taskId, body);
+    sendingRef.current = false;
     setSending(false);
     if (result?.error) {
       toast.error(result.error);
@@ -65,6 +69,7 @@ export function TaskActivity({ detail, reload }: { detail: TaskDetail; reload: (
           placeholder="Escribe un comentario… (markdown)"
           aria-label="Nuevo comentario"
           className="min-h-[70px]"
+          disabled={sending}
         />
         <div className="flex justify-end">
           <Button type="submit" size="sm" disabled={sending || !body.trim()}>Enviar</Button>
@@ -78,6 +83,10 @@ function CommentItem({ comment, mine, reload }: { comment: TaskComment; mine: bo
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(comment.body);
   const edited = Date.parse(comment.updated_at) - Date.parse(comment.created_at) > EDIT_GRACE_MS;
+
+  useEffect(() => {
+    if (!editing) setDraft(comment.body);
+  }, [comment.body, editing]);
 
   async function save() {
     const result = await updateComment(comment.id, comment.task_id, draft);
