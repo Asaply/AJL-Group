@@ -6,6 +6,7 @@ import { ProjectFilters } from "@/components/projects/project-filters";
 import { nextPaletteColor } from "@/lib/colors";
 
 const NIL_UUID = "00000000-0000-0000-0000-000000000000";
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default async function ProjectsPage({
   searchParams,
@@ -34,7 +35,7 @@ export default async function ProjectsPage({
 
   if (searchParams.client === "none") {
     query = query.is("client_id", null);
-  } else if (searchParams.client && searchParams.client !== "all") {
+  } else if (searchParams.client && UUID_RE.test(searchParams.client)) {
     query = query.eq("client_id", searchParams.client);
   }
 

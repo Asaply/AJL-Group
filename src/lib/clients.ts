@@ -13,7 +13,7 @@ export const CLIENT_STATUS_LABELS = {
 } as const;
 
 const RFC_RE = /^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_RE = /^[^\s@?&%#/:;,<>"]+@[^\s@?&%#/:;,<>"]+\.[^\s@?&%#/:;,<>"]+$/;
 const PHONE_CHARS_RE = /^[+\d\s().-]+$/;
 
 function str(formData: FormData, key: string): string {

@@ -19,7 +19,17 @@ export function ClientHeader({ client, projectCount }: { client: Client; project
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [busy, setBusy] = useState(false);
   const website = client.website ? parseHttpUrl(client.website) : null;
+
+  async function removeUploaded(supabase: ReturnType<typeof createClient>, path: string) {
+    try {
+      const { error: cleanupError } = await supabase.storage.from("client-logos").remove([path]);
+      if (cleanupError) console.error("[ClientHeader] cleanup failed", path, cleanupError);
+    } catch (cleanupError) {
+      console.error("[ClientHeader] cleanup failed", path, cleanupError);
+    }
+  }
 
   async function handleLogo(file: File) {
     const problem = validateLogo(file);
@@ -28,43 +38,64 @@ export function ClientHeader({ client, projectCount }: { client: Client; project
       return;
     }
     setUploading(true);
-    const supabase = createClient();
-    const path = logoPath(client.id, crypto.randomUUID(), file.type);
+    let uploaded = false;
+    let registered = false;
+    let supabase: ReturnType<typeof createClient> | undefined;
+    let path: string | undefined;
     try {
+      supabase = createClient();
+      path = logoPath(client.id, crypto.randomUUID(), file.type);
       const { error: uploadError } = await supabase.storage.from("client-logos").upload(path, file, { contentType: file.type });
       if (uploadError) {
         toast.error("No se pudo subir el logo");
         return;
       }
+      uploaded = true;
+      registered = true;
       const result = await setClientLogo(client.id, path);
       if (result?.error) {
         toast.error(result.error);
-        const { error: cleanupError } = await supabase.storage.from("client-logos").remove([path]);
-        if (cleanupError) console.error("[ClientHeader] cleanup failed", path, cleanupError);
+        await removeUploaded(supabase, path);
       }
     } catch (error) {
       console.error("[ClientHeader] logo upload failed", error);
       toast.error("No se pudo subir el logo");
-      await supabase.storage.from("client-logos").remove([path]);
+      if (uploaded && !registered && supabase && path) {
+        await removeUploaded(supabase, path);
+      }
     } finally {
       setUploading(false);
     }
   }
 
   async function handleRemoveLogo() {
-    const result = await setClientLogo(client.id, null);
-    if (result?.error) toast.error(result.error);
+    setBusy(true);
+    try {
+      const result = await setClientLogo(client.id, null);
+      if (result?.error) toast.error(result.error);
+    } catch {
+      toast.error("No se pudo completar la acción");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleDelete() {
     const note = projectCount > 0 ? ` Sus ${projectCount} proyectos quedarán sin cliente.` : "";
     if (!confirm(`¿Eliminar a ${client.name}?${note}`)) return;
-    const result = await deleteClient(client.id);
-    if (result?.error) {
-      toast.error(result.error);
-      return;
+    setBusy(true);
+    try {
+      const result = await deleteClient(client.id);
+      if (result?.error) {
+        toast.error(result.error);
+        return;
+      }
+      router.push("/clients");
+    } catch {
+      toast.error("No se pudo completar la acción");
+    } finally {
+      setBusy(false);
     }
-    router.push("/clients");
   }
 
   return (
@@ -73,14 +104,19 @@ export function ClientHeader({ client, projectCount }: { client: Client; project
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          disabled={uploading}
+          disabled={uploading || busy}
           aria-label={client.logo_path ? "Cambiar logo" : "Subir logo"}
           className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ClientAvatar name={client.name} logoPath={client.logo_path} className="h-16 w-16 text-xl" />
         </button>
         {client.logo_path && (
-          <button type="button" onClick={handleRemoveLogo} className="text-xs text-muted-foreground hover:underline">
+          <button
+            type="button"
+            onClick={handleRemoveLogo}
+            disabled={busy}
+            className="text-xs text-muted-foreground hover:underline disabled:opacity-50"
+          >
             Quitar logo
           </button>
         )}
@@ -113,7 +149,7 @@ export function ClientHeader({ client, projectCount }: { client: Client; project
       </div>
       <div className="flex gap-2">
         <ClientFormDialog client={client} trigger={<Button variant="outline"><Pencil className="h-4 w-4 mr-2" />Editar</Button>} />
-        <Button variant="destructive" onClick={handleDelete}><Trash2 className="h-4 w-4 mr-2" />Eliminar</Button>
+        <Button variant="destructive" onClick={handleDelete} disabled={busy}><Trash2 className="h-4 w-4 mr-2" />Eliminar</Button>
       </div>
     </div>
   );

@@ -14,9 +14,14 @@ export function ClientContacts({ clientId, contacts }: { clientId: string; conta
 
   async function run(action: () => Promise<{ error: string } | undefined>) {
     setBusy(true);
-    const result = await action();
-    setBusy(false);
-    if (result?.error) toast.error(result.error);
+    try {
+      const result = await action();
+      if (result?.error) toast.error(result.error);
+    } catch {
+      toast.error("No se pudo completar la acción");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -61,7 +66,10 @@ export function ClientContacts({ clientId, contacts }: { clientId: string; conta
               </div>
               <div className="flex flex-col gap-1">
                 {c.email && (
-                  <a href={`mailto:${c.email}`} className="inline-flex items-center gap-2 text-primary hover:underline">
+                  <a
+                    href={`mailto:${encodeURIComponent(c.email).replace(/%40/g, "@")}`}
+                    className="inline-flex items-center gap-2 text-primary hover:underline"
+                  >
                     <Mail className="h-3 w-3" aria-hidden />{c.email}
                   </a>
                 )}

@@ -97,8 +97,9 @@ export async function setClientLogo(id: string, path: string | null) {
   if (currentError) return actionError("setClientLogo:current", currentError, LOAD_ERROR);
   if (!current) return { error: CLIENT_GONE };
 
-  const { error } = await supabase.from("clients").update({ logo_path: next }).eq("id", id);
+  const { data: updated, error } = await supabase.from("clients").update({ logo_path: next }).eq("id", id).select("id");
   if (error) return actionError("setClientLogo", error, SAVE_ERROR);
+  if (!updated || updated.length === 0) return { error: CLIENT_GONE };
 
   const previous = current.logo_path as string | null;
   if (previous && previous !== next) {

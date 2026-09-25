@@ -28,13 +28,19 @@ export function ProjectContacts({
 
   async function run(action: () => Promise<{ error: string } | undefined>) {
     setBusy(true);
-    const result = await action();
-    setBusy(false);
-    if (result?.error) {
-      toast.error(result.error);
+    try {
+      const result = await action();
+      if (result?.error) {
+        toast.error(result.error);
+        return false;
+      }
+      return true;
+    } catch {
+      toast.error("No se pudo completar la acción");
       return false;
+    } finally {
+      setBusy(false);
     }
-    return true;
   }
 
   async function handleLink() {

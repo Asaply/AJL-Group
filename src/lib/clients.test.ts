@@ -74,6 +74,7 @@ describe("parseContactForm", () => {
   });
   it("validates email, phone and whatsapp", () => {
     expect(parseContactForm(fd({ name: "A", email: "ana@" }))).toEqual({ ok: false, error: "El email no es válido" });
+    expect(parseContactForm(fd({ name: "A", email: "a@b.mx?bcc=c@d.mx" }))).toEqual({ ok: false, error: "El email no es válido" });
     expect(parseContactForm(fd({ name: "A", phone: "12345" }))).toEqual({ ok: false, error: "El teléfono no es válido" });
     expect(parseContactForm(fd({ name: "A", phone: "81-abc-1234" }))).toEqual({ ok: false, error: "El teléfono no es válido" });
     expect(parseContactForm(fd({ name: "A", whatsapp: "1234567890123456" }))).toEqual({ ok: false, error: "El WhatsApp no es válido" });

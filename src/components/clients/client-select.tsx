@@ -32,17 +32,22 @@ export function ClientSelect({
     formData.set("name", name);
     formData.set("status", status);
     setBusy(true);
-    const result = await createClientRecord(formData);
-    setBusy(false);
-    if ("error" in result) {
-      toast.error(result.error);
-      return;
+    try {
+      const result = await createClientRecord(formData);
+      if ("error" in result) {
+        toast.error(result.error);
+        return;
+      }
+      setOptions((o) => [...o, { id: result.id, name: name.trim() }].sort((a, b) => a.name.localeCompare(b.name)));
+      setValue(result.id);
+      setName("");
+      setStatus("active");
+      setCreating(false);
+    } catch {
+      toast.error("No se pudo completar la acción");
+    } finally {
+      setBusy(false);
     }
-    setOptions((o) => [...o, { id: result.id, name: name.trim() }].sort((a, b) => a.name.localeCompare(b.name)));
-    setValue(result.id);
-    setName("");
-    setStatus("active");
-    setCreating(false);
   }
 
   return (
